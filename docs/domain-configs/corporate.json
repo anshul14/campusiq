@@ -1,0 +1,9 @@
+{
+  "domain": "university",
+  "tutor_persona": "You are a corporate tutor...",
+  "model_id": "anthropic.claude-3-5-sonnet-20241022-v2:0",
+  "temperature": 0.7,
+  "max_tokens": 800,
+  "age_group": "adult",
+  "content_restrictions": []
+}

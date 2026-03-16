@@ -1,0 +1,20 @@
+{
+  "deployment": {
+    "name": "your-institution",
+    "region": "aws-region",
+    "environment": "dev | stage | prod "
+  },
+  "idp": {
+    "type": "ENTRA_ID",
+    "comment": "Options: ENTRA_ID | GOOGLE | SAML"
+  },
+  "cms_plugin": {
+    "type": "s3",
+    "comment": "Options: s3 | strapi | contentful | google_classroom | custom",
+    "field_mapping": {}
+  },
+  "domain": {
+    "type": "universities",
+    "comment": "Options: universities | k12 | corporate"
+  }
+}
