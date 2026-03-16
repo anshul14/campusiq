@@ -27,6 +27,21 @@ CampusIQ was built to solve both of these issues.
 - **AI Assistant:** Acts as an AI-powered assistant to augment human tutoring, grounded in your actual course content and not 
   the open internet.
 
+# How CampusIQ Works Alongside Your Existing Tools
+
+CampusIQ is not a replacement for your existing content management 
+system (CMS) but an augmentation to deliver AI capabilities. Your 
+CMS is for content creation — CampusIQ is for learning delivery.
+
+Once deployed and configured, CampusIQ connects to your CMS. You 
+do not need to sign a new SaaS contract or trust a new vendor with 
+your student data — nothing ever leaves your own infrastructure. 
+You keep creating content exactly the way you do today. What 
+changes is that teachers get a dashboard showing which students are 
+struggling with which concepts. Students get a single place to 
+access all course content along with an AI tutor that adapts their 
+learning path based on their progress.
+
 # Architecture
 
 CampusIQ is built on Amazon Web Services (AWS). It comprises 4 layers:
