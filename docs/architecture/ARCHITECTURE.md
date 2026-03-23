@@ -81,5 +81,34 @@ teacher can edit it when reviewing.
                   "correct_ids": ["a"]
               }
 ```
+### 3.2 Gap Detection
 
-    
+Once the quiz results are written to the DynamoDB, the stream processor lambda fires QuizCompleted event. This event has an EventBridge
+rule on it that routes the events to the Gap Detection Lambda. This lambda is responsible for translating the quiz performance into a concept-level
+weakness model for the student. 
+
+Following sequence of steps occur inside it:
+1. Read concept_scores map from the event. 
+2. Look up existing gap records for each concept.
+3. Calculate new gap_severity.
+4. Write updated gap record to DynamoDB.
+
+The gap_severity scoring model calculates the gap in a student's understanding of the concepts. It is the inverse of the concept mastery and is 
+calculated on a scale of 0.0 to 1.0 with 0.0 means complete mastery and 1.0 means completely unknown. 0.7 is defined as the risk-threshold.
+
+| gap_severity | 	Meaning                                                               | 	Action                                                                                       |
+|--------------|------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------|
+| 0.0 – 0.3    | 	Strong — student has demonstrated consistent mastery of this concept	 | No action. Path does not prioritise this concept.                                             |
+| 0.3 – 0.6    | 	Developing — student partially understands but has some gaps	         | Noted. Tutor Agent aware but no path change triggered.                                        |
+| 0.6 – 0.7	   | Weak — student is consistently struggling with this concept	           | Noted. Included in Orchestrator context enrichment. Path may adjust.                          |
+| 0.7 – 1.0    | 	At-risk threshold exceeded — student has a significant knowledge gap	 | GapDetected EventBridge event fires. Recommendation Lambda triggered. Faculty alert may fire. |
+
+While calculating gap_severity, recent attempts are weighted more than older ones so that the system reflects current state not historical average. 
+As an example, if a student scored [0.4, 0.3, 0.5] in friction across 3 quizzes the weighted average is approximately 0.41 and the gap_severity = 1.0 - 0.41 = 0.59
+
+The gap_severity is written to the DynamoDB stream and the Stream Processor Lambda checks the new gap_severity. If it exceeds 0.7, a second
+EventBridge event fires - GapDetected and the loop continues. If the gap_severity is below 0.7, the loop stops for this cycle. 
+
+0.7 is the loop's gating threshold to prevent the Recommendation Lambda from running after every quiz submission - which would
+be wasteful and disruptive. It is invoked only when the student has demonstrated genuine weakness in a concept. This threshold is configurable in the
+domain config file. 
