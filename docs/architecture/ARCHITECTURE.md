@@ -14,7 +14,7 @@
 10. [Extensibility](#10-extensibility)
 
 
-# 1. Overview
+## 1. Overview
 
 CampusIQ is an AI powered adaptive learning platform that augments the learning delivery capabilities of institutions. 
 Most of the learning management platforms that exist today are static in nature. They provide the same learning path to each 
@@ -32,12 +32,30 @@ These three features makes CampusIQ unique from the existing LMS. Self-hosted AI
 subscribe to a SaaS platform, which means your student data lives on someone else's servers, or you build a custom solution on top to provide AI capabilities, which is hard and time-consuming. 
 
 
-# 2. System Architecture
-CampusIQ is a self-hosted adaptive learning platform that provides AI-driven personalization on top of human- authored
-content to tailor the learning path of each student based on their skills and comprehension level. 
+## 2. System Architecture
 
-It is architected as a pluggable framework that can be plugged-in to your existing content management system (CMS)
-and act as an AI layer of it. 
+CampusIQ is organised into four layers that work together as a
+closed feedback loop. Each layer has a distinct responsibility but
+no layer operates independently — content flows into intelligence,
+intelligence drives delivery, and delivery generates data that
+feeds back into intelligence.
+
+![CampusIQ Architecture](campusiq-architecture.png)
+
+### 2.1 Content Sources Layer
+
+CampusIQ has a plugin architecture that allows you to bring your
+own CMS — Google Classroom, Strapi, or S3. It also has a built-in
+content creation layer for institutions that do not have an existing
+CMS. The Content Plugin Interface (CPI) normalises content into a
+standard format that the CampusIQ backend understands. Content is
+ingested into an S3 bucket in your own AWS account — this ensures
+the AI layer is not dependent on the CMS being available and
+eliminates latency from live API calls during a student session.
+The ingested content forms the Knowledge Base for Amazon Bedrock
+on which the language models ground their answers. The AI layer
+never talks to the CMS directly — only to the CPI.
+
 
 ## 3. The Cognitive Learning Loop
 
