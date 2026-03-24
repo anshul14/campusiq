@@ -16,6 +16,20 @@
 
 # 1. Overview
 
+CampusIQ is an AI powered adaptive learning platform that augments the learning delivery capabilities of institutions. 
+Most of the learning management platforms that exist today are static in nature. They provide the same learning path to each 
+student oblivious to the gaps in learning of each student. This leaves a very big gap in a student's ability to excel, since continued learning is built on top of what you already know
+and if the previous concepts are weak it affects the future learning. 
+
+CampusIQ is built on three core architectural principles. First, it is self-hosted. You deploy it to your own AWS account and hence none of your
+student data ever leaves your infrastructure. Second, it is pluggable to your existing content management system (CMS). You continue to create content
+as you do today, and CampusIQ works on top of that content seamlessly. No hassle to move content neither to learn any new CMS. CampusIQ has 
+native integrations with Google Classroom, Strapi API, and S3 and can easily be integrated with any other CMS you use by implementing the plugin interface.
+Third, it is AI-native — artificial intelligence is not bolted on top of the platform as an afterthought. It is the core delivery mechanism. 
+The Cognitive Learning Loop, the AI Tutor, and the gap detection system are not optional add-ons — they are the platform.
+
+These three features makes CampusIQ unique from the existing LMS. Self-hosted AI native learning platforms do not exist today. You either have to 
+subscribe to a SaaS platform, which means your student data lives on someone else's servers, or you build a custom solution on top to provide AI capabilities, which is hard and time-consuming. 
 
 
 # 2. System Architecture
