@@ -184,5 +184,44 @@ Response
 }
 
 ```
+###  3.4 — Tutor Context Enrichment
 
+Every time a student asks the AI Tutor a question, the Orchestrator is called. One of the orchestrator
+agent jobs is context enrichment - it injects the student's current gap summary into the prompt before dispatching
+it to the Tutor Agent. 
 
+For building the gap summary, the Orchestrator reads the student's top gaps from DynamoDB via GSI2. It then
+injects this gap summary into the Tutor Agent's system prompt alongside student's active learning path and domain config. 
+
+Enriched Context 
+```json
+{
+    "student_profile": {
+        "name":   "John Smith",
+        "domain": "university",
+        "grade":  "sophomore"
+    },
+    "gap_summary": [
+        {"concept": "friction",      "severity": 0.8, "label": "needs-attention"},
+        {"concept": "newtons_third", "severity": 0.5, "label": "developing"},
+    ],
+    "active_learning_path": {
+        "current_module": "week3-friction-remediation",
+        "next_module":    "week3-newtons-laws"
+    },
+    "domain_config": {
+        "tutor_persona": "You are a university-level physics tutor...",
+        "temperature":   0.7
+    }
+}
+
+```
+The Tutor Agent's system prompt includes the gap context explicitly.
+For example — if a student has a friction gap of 0.8, the prompt
+instructs the Tutor to proactively connect answers about Newton's
+Laws to friction concepts, even if the student did not ask about
+friction directly.
+
+Without the gap context, the Tutor Agent is reactive and only answers the question that the student asks. With gap context, the
+Tutor Agent becomes proactive since it now has the context about the gap and ties its response to the weak area. The student 
+receives targeted help even when they do not know to ask for it. 
