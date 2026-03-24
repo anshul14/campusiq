@@ -112,3 +112,77 @@ EventBridge event fires - GapDetected and the loop continues. If the gap_severit
 0.7 is the loop's gating threshold to prevent the Recommendation Lambda from running after every quiz submission - which would
 be wasteful and disruptive. It is invoked only when the student has demonstrated genuine weakness in a concept. This threshold is configurable in the
 domain config file. 
+
+### 3.3 - Learning Path Adaptation
+
+Based on the gap_severity value (>0.7) the Recommendation Lambda is triggered. This lambda is responsible for taking the gap signal and translating it into a concrete learning path - an ordered list of
+modules the student should work through next. 
+
+Following sequence of steps occur inside it:
+1. Read student's full gap profile from DynamoDB.
+2. Call Amazon Personalize get_recommendations endpoint with student ID and gap context as item metadata.
+3. Map Personalize recommendations to module IDs
+4. Write updated LearningPath to DynamoDB.
+
+The Recommendation Lambda reads the student's gap profile by querying GSI2 - PK = STUDENT#{sub}, ScanIndexForward=False and get all the gaps sorted by severity descending as response. Top 5 weakest
+concepts are returned. Once the gap context is returned, the Lambda calls Amazon Personalize and pass it student ID and gap context as metadata. Personalize then returns ranked content recommendations based on student's interaction
+history and gap profile.
+
+*Personalize requires interaction history to make good recommendations but when CampusIQ is first deployed for an institution it does not have any interaction history. This is called the cold start problem.
+Since it does not have any interaction history, Personalize during cold start falls back to popularity-based recommendations - it recommends modules that most students at that difficulty level engage with. So 
+it is not personalized, but not completely random either. As students use the platform and interaction events accumulate, Personalize learns patterns, and it updates its model automatically as new interactions arrive - no manual retraining is needed.*
+
+Once the LearningPath is returned it is then updated in DynamoDB.
+
+```json
+{
+    "PK":                   "STUDENT#cognito-sub-abc",
+    "SK":                   "PATH#phys101",
+    "course_id":            "phys101",
+    "recommended_modules":  [
+        "week3-friction-remediation",   
+        "week3-newtons-laws",           
+        "week4-forces",                
+        "week2-dynamics-review"   
+    ],
+    "current_module_id":    "week3-friction-remediation",
+    "rationale":            "Prioritising friction remediation — gap severity 0.8. Newton's Third Law also flagged.",
+    "generated_at":         "2026-03-15T14:23:00Z",
+    "expires_at":           "2026-03-16T14:23:00Z",
+    "ttl":                  1773936180
+}
+
+```
+The LearningPath has a 24-hour TTL. This is done intentionally to ensure that the path is always based on the student's most
+recent state and not a week-old snapshot. If when the student loads their course and the path is not found, the learning-path endpoint
+triggers a fresh Personalize recommendation synchronously before responding. 
+
+When a student logs into the platform and open CourseShell, the learning path endpoint is called. The fresh LearningPath record is read, which
+reflects the gap detection and the student is guided toward remediation content without any manual teacher intervention. 
+
+GET /api/v1/students/me/courses/phys101/learning-path
+Response
+```json
+
+{
+    "course_id": "phys101",
+    "recommended_modules": [
+        {
+            "module_id": "week3-friction-remediation",
+            "title":     "Understanding Friction — A Closer Look",
+            "rationale": "Recommended based on recent quiz performance"
+        },
+        {
+            "module_id": "week3-newtons-laws",
+            "title":     "Newton's Laws of Motion",
+            "rationale": "Re-attempt after remediation"
+        }
+    ],
+    "current_module_id": "week3-friction-remediation",
+    "generated_at":      "2026-03-15T14:23:00Z",
+    "expires_at":        "2026-03-16T14:23:00Z"
+}
+
+```
+
+
