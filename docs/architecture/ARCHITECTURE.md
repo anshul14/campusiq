@@ -56,7 +56,65 @@ The ingested content forms the Knowledge Base for Amazon Bedrock
 on which the language models ground their answers. The AI layer
 never talks to the CMS directly — only to the CPI.
 
+### 2.2 AI Intelligence Layer
 
+The AI intelligence layer comprises Orchestrator and Tutor Agent that runs in Amazon Bedrock AgentCore.
+The Orchestrator enriches the context with the student's gap summary before sending it to Tutor Agent. The Tutor
+Agent gets this enriched context and uses it to answer any questions - tie up with the previous concepts
+that the student has gap in. The tutor agent always grounds its answers in the actual content which forms the basis
+for Amazon Bedrock Knowledge Base. The AI intelligence layer also has four Lambdas - Gap Detection - responsible for translating the quiz performance into a concept-level
+weakness model for the student , Recommendation - responsible for taking the gap signal and translating it into a concrete learning path, 
+Content Adaptation, Assessment
+
+### 2.3 Adaptive Delivery Layer
+
+The adaptive delivery layer is the mechanism through which the Cognitive Learning Loop's output reaches the student. A student's  learning path is personalized based on the gap
+profile. Amazon Personalize ingests this gap profile and interaction history and produces the personalized learning path for the student. 
+The interaction between components is asynchronous and event-driven, orchestrated by Amazon EventBridge. The personalized learning path is stored in 
+DynamoDB and read by CourseShell - the navigation container that presents the personalized module sequences to the student. The whole process is automated without any teacher intervention. The learning path record has a 24-hour TTL that ensures
+that the CourseShell is always displaying the recent state and not a stale snapshot.
+
+### 2.4 Analytics Layer
+
+<!--
+Write about:
+- DynamoDB Streams feed an analytics pipeline
+- Data flows: DynamoDB Streams → Lambda → S3 → Glue → Athena → QuickSight
+- Teachers see four dashboard panels:
+    Class Health — avg mastery, at-risk count, tutor engagement
+    Concept Gap Heatmap — which concepts the cohort is struggling with
+    Student Progress Timeline — individual student mastery over time
+    Content Effectiveness — which modules produce the best quiz outcomes
+- At-risk alerts fire via SNS when a student's gap_severity exceeds 0.7
+- This layer never queries the operational DynamoDB table — it reads
+  from the analytics S3 lake via Athena
+
+One paragraph. No bullets.
+-->
+
+### 2.5 How the Layers Connect
+
+<!--
+Write one paragraph that explicitly traces the flow from end to end.
+This is the most important paragraph in Section 2.
+
+The flow to describe:
+Content from CMS → CPI → S3 → Bedrock Knowledge Base
+Student submits quiz → DynamoDB → Stream Processor Lambda → EventBridge
+EventBridge → Gap Detection Lambda → gap_severity calculated
+gap_severity > 0.7 → Recommendation Lambda → Personalize → LearningPath updated
+Student opens CourseShell → reads updated LearningPath → sees personalised modules
+Student asks Tutor → Orchestrator injects gap context → Tutor grounds answer in KB
+All interactions → DynamoDB Streams → Analytics Pipeline → Faculty Dashboard
+
+End with a sentence that ties it together — something like:
+"No layer operates in isolation. Every student interaction generates
+a signal that propagates through the system and eventually reshapes
+the student's experience."
+
+This closing sentence is important — it is what distinguishes
+CampusIQ from a static LMS and should be in your own words.
+-->
 ## 3. The Cognitive Learning Loop
 
 Cognitive learning focuses on internal mental processes in learning. Learning is not passive - it requires
