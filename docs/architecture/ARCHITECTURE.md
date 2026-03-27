@@ -76,45 +76,17 @@ that the CourseShell is always displaying the recent state and not a stale snaps
 
 ### 2.4 Analytics Layer
 
-<!--
-Write about:
-- DynamoDB Streams feed an analytics pipeline
-- Data flows: DynamoDB Streams → Lambda → S3 → Glue → Athena → QuickSight
-- Teachers see four dashboard panels:
-    Class Health — avg mastery, at-risk count, tutor engagement
-    Concept Gap Heatmap — which concepts the cohort is struggling with
-    Student Progress Timeline — individual student mastery over time
-    Content Effectiveness — which modules produce the best quiz outcomes
-- At-risk alerts fire via SNS when a student's gap_severity exceeds 0.7
-- This layer never queries the operational DynamoDB table — it reads
-  from the analytics S3 lake via Athena
-
-One paragraph. No bullets.
--->
+The analytics layer is responsible for translating the student's interaction data into actionable insights for the teachers and administrators. 
+DynamoDB streams feed the analytics pipeline -  data flows from DynamoDB Streams through a Lambda processor into an S3 analytics lake,
+where AWS Glue crawls and catalogues it, Athena queries it, and QuickSight renders it as a faculty dashboard. The dashboard comprises four panels: class health showing average mastery scores
+and at-risk student counts, a concept gap heatmap showing which concepts the cohort is collectively struggling with, a student progress timeline showing individual 
+mastery trajectories over time, and a content effectiveness scoreboard ranking modules by the quiz score improvements they produce.
+0.7 is defined as the gap_severity threshold and a gap_severity value > 0.7 triggers an SNS alert to the teacher. The analytics layer never queries the operational DynamoDB table  
+freeing it for low-latency student interaction. All the analytics reads go through the S3 lake via Athena.
 
 ### 2.5 How the Layers Connect
 
-<!--
-Write one paragraph that explicitly traces the flow from end to end.
-This is the most important paragraph in Section 2.
 
-The flow to describe:
-Content from CMS → CPI → S3 → Bedrock Knowledge Base
-Student submits quiz → DynamoDB → Stream Processor Lambda → EventBridge
-EventBridge → Gap Detection Lambda → gap_severity calculated
-gap_severity > 0.7 → Recommendation Lambda → Personalize → LearningPath updated
-Student opens CourseShell → reads updated LearningPath → sees personalised modules
-Student asks Tutor → Orchestrator injects gap context → Tutor grounds answer in KB
-All interactions → DynamoDB Streams → Analytics Pipeline → Faculty Dashboard
-
-End with a sentence that ties it together — something like:
-"No layer operates in isolation. Every student interaction generates
-a signal that propagates through the system and eventually reshapes
-the student's experience."
-
-This closing sentence is important — it is what distinguishes
-CampusIQ from a static LMS and should be in your own words.
--->
 ## 3. The Cognitive Learning Loop
 
 Cognitive learning focuses on internal mental processes in learning. Learning is not passive - it requires
