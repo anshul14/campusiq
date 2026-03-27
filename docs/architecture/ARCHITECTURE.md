@@ -86,6 +86,18 @@ freeing it for low-latency student interaction. All the analytics reads go throu
 
 ### 2.5 How the Layers Connect
 
+The content from the content management system flows through the content plugin interface, which standardizes the content to CampusIQ standard format and pushes to an S3
+bucket, which is used as the data source for Bedrock Knowledge Base. Whenever a student submits a quiz, the quiz
+results are calculated and recorded in DynamoDB from where they are streamed via EventBridge to the Gap Detection lambda
+that calculates the gap_severity and writes to the DynamoDB. If the gap_severity threshold value (>= 0.7) is breached the EventBridge event
+is triggered and the Recommendation Lambda calls Amazon Personalize and Personalize updates the learning path. 
+Next time the student logs into CampusIQ and opens CourseShell they are presented the updated LearningPath. 
+Whenever a student asks a question to the Tutor Agent, the Orchestrator injects gap context and the tutor grounds its answer in Bedrock Knowledge Base. 
+All interactions are routed through the DynamoDB streams to the analytics pipeline which feeds the Faculty Dashboard. 
+
+No layer in the whole system operates in isolation. Every student interaction generates a signal that propagates through the system and eventually reshapes
+the student's experience.
+
 
 ## 3. The Cognitive Learning Loop
 
