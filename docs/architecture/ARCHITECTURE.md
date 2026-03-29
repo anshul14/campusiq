@@ -339,4 +339,9 @@ As content moves through the pipeline an ingestion manifest is written to Dynamo
 when the new content is available to students. An important architectural decision is to make the ingestion pipeline opaque to the internally created or externally uploaded content. The same ingestion pipeline 
 is triggered and performs the same steps whether CampusIQ is used for content creation or any other CMS. The AI layer makes no distinction. This is what the Unified Ingestion Pipeline pattern means in practice. 
 
+### 4.4 Adding a Custom Plugin
 
+Adding a new CMS plugin requires no changes to the CampusIQ platform. The plugin class must extend the ContentPluginInterface and implement its five abstract methods - fetch_content, search_content, 
+list_courses, get_metadata, and ingest_content - and register the plugin type in campusiq.config.json. In case, the new CMS uses non-standard field names, add a field_mapping section to the config file mapping
+non-standard to the standard field names, and the platform will read from it at runtime. The template plugin at src/application/plugins/content_plugin_interface/template is the recommended starting point - it 
+includes the class skeleton, method signatures, and inline documentation. See docs/cms-plugin-guide/ for the full implementation. 
