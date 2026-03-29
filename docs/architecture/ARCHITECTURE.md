@@ -306,4 +306,17 @@ Content Provider Interface (CPI) separates the institution's content management 
 doesn't need to know anything about the CMS. The institutions integrate their CMS with CampusIQ by implementing the CPI - a standard contract that transforms CMS specific content
 into a format CampusIQ understands. This is what distinguishes CampusIQ as a framework rather than a platform - the AI layer works without any CMS modification. 
 
+### 4.1 The Standard Contract
+
+The CPI defines five actions that every plugin must implement - fetch_content fetches a single content item from the CMS by course and module ID, 
+search_content searches for content items matching a query string, list_courses lists all available courses from the CMS, 
+get_metadata returns metadata for a specific content item, ingest_content triggers the ingestion of content into the CampusIQ knowledge base pipeline. 
+
+Every plugin must return a CPIContent object - the standard output that the CampusIQ platform consumes. CPIContent object carries
+the content_id, title, content_type, and metadata including domain, difficulty, and the source CMS. The content itself is carried in three
+optional fields depending on the type of content - body carries markdown text for rich text content, content_url carries the S3 object keys
+for PDFs, and video_url and transcript_url carry the HLS stream URL and WebVTT path respectively for video content. It is a deliberate
+decision to only populate the relevant field to make the contract explicit about what type of content each response carries and prevents the platform
+from having to guess. So as an example, a PDF response sets content_url and leaves body and video_url empty. 
+
 
