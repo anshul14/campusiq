@@ -329,4 +329,14 @@ expire after every seven days. The Strapi plugin connects via the Strapi REST AP
 via campusiq.config.json rather than hardcoded. A template plugin also ships in the repository at src/application/plugins/content_plugin_interface/template as a starting point for building integrations
 with any other CMS. 
 
+### 4.3 Content Ingestion Pipeline
+
+Once the CPIContent object is returned by the plugin, the ingestion Lambda takes over, and it routes based on content_type. 
+Markdown content is saved as .md, PDF content is saved as .pdf to the institution's own S3 bucket in the convention-based folder structure. The video content 
+after saving to S3 triggers two parallel events - MediaConvert transcodes the video to HLS for adaptive streaming and Transcribe generates a WebVTT transcript. 
+Also, every S3 write automatically triggers Bedrock Knowledge Base sync to ingest the new content and make available to the Tutor Agent. 
+As content moves through the pipeline an ingestion manifest is written to DynamoDB tracking the status from pending to processing to complete. The teachers can check this status via the API to know 
+when the new content is available to students. An important architectural decision is to make the ingestion pipeline opaque to the internally created or externally uploaded content. The same ingestion pipeline 
+is triggered and performs the same steps whether CampusIQ is used for content creation or any other CMS. The AI layer makes no distinction. This is what the Unified Ingestion Pipeline pattern means in practice. 
+
 
