@@ -314,9 +314,19 @@ get_metadata returns metadata for a specific content item, ingest_content trigge
 
 Every plugin must return a CPIContent object - the standard output that the CampusIQ platform consumes. CPIContent object carries
 the content_id, title, content_type, and metadata including domain, difficulty, and the source CMS. The content itself is carried in three
-optional fields depending on the type of content - body carries markdown text for rich text content, content_url carries the S3 object keys
+optional fields depending on the type of content - body carries Markdown text for rich text content, content_url carries the S3 object keys
 for PDFs, and video_url and transcript_url carry the HLS stream URL and WebVTT path respectively for video content. It is a deliberate
 decision to only populate the relevant field to make the contract explicit about what type of content each response carries and prevents the platform
 from having to guess. So as an example, a PDF response sets content_url and leaves body and video_url empty. 
+
+### 4.2 Built-in Plugins
+
+Out of the box CampusIQ provides three built-in plugins. The S3 plugin is the default and is the correct choice for institutes that create the content directly in CampusIQ. 
+S3 plugin requires no external CMS - the content is read from the institution's own S3 bucket and is stored in a convention-based folder structure following the pattern
+{domain}/{courseId}/modules/{moduleId}/content.md. The Google Classroom plugin connects via the Classroom API v1 and Drive API v3 for fetching coursework and attachments. Google 
+Cloud Pub/Sub webhooks are configured to receive real-time notifications when a new course is published. To maintain continuity, the plugin re-registers with Pub/Sub every five days because the registrations
+expire after every seven days. The Strapi plugin connects via the Strapi REST API v4. Since different Strapi installations use different field names for the same content, field names are made configurable 
+via campusiq.config.json rather than hardcoded. A template plugin also ships in the repository at src/application/plugins/content_plugin_interface/template as a starting point for building integrations
+with any other CMS. 
 
 
