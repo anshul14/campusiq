@@ -345,3 +345,16 @@ Adding a new CMS plugin requires no changes to the CampusIQ platform. The plugin
 list_courses, get_metadata, and ingest_content - and register the plugin type in campusiq.config.json. In case, the new CMS uses non-standard field names, add a field_mapping section to the config file mapping
 non-standard to the standard field names, and the platform will read from it at runtime. The template plugin at src/application/plugins/content_plugin_interface/template is the recommended starting point - it 
 includes the class skeleton, method signatures, and inline documentation. See docs/cms-plugin-guide/ for the full implementation. 
+
+## 5. Multi-Agent Design
+
+CampusIQ is architected on single responsibility principle and hence has multiple modular and specialized components rather than one monolithic agent.
+There are two runtimes - Amazon Bedrock AgentCore and AWS Lambda. The architecture follows a hub-and-spoke pattern where the hub - the Orchestrator intercepts the 
+request first - enriches it with student's gap summary, active learning path, student profile, and domain config before dispatching to the Tutor Agent.  
+This leaves the Tutor Agent - a spoke, with a single responsibility of answering questions grounded in the content. It does not have to worry about routing, context enrichment, or what other
+components are doing. In the absence of this pattern each component will have to manage the routing of other components making it hard to maintain. With Hub and Spoke each spoke agent is simple with
+a single responsibility and all the complexity lives in the Orchestrator. Adding a new spoke agent would mean adding one new component without changing any existing agent. At any point the Orchestrator
+has the full picture. 
+ 
+In CampusIQ only the Orchestrator and Tutor Agent are in Amazon Bedrock AgentCore.The other four components are Lambda functions triggered by 
+EventBridge — they are not spokes in the AgentCore sense, they are separate event-driven processors. So the Hub and Spoke pattern applies specifically to the AgentCore layer.
