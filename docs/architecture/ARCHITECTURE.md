@@ -299,3 +299,11 @@ friction directly.
 Without the gap context, the Tutor Agent is reactive and only answers the question that the student asks. With gap context, the
 Tutor Agent becomes proactive since it now has the context about the gap and ties its response to the weak area. The student 
 receives targeted help even when they do not know to ask for it. 
+
+## 4. Content Provider Interface
+
+Content Provider Interface (CPI) separates the institution's content management system from the CampusIQ platform. The CPI layer acts as a boundary beyond which the platform
+doesn't need to know anything about the CMS. The institutions integrate their CMS with CampusIQ by implementing the CPI - a standard contract that transforms CMS specific content
+into a format CampusIQ understands. This is what distinguishes CampusIQ as a framework rather than a platform - the AI layer works without any CMS modification. 
+
+
