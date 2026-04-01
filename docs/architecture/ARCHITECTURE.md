@@ -358,3 +358,35 @@ has the full picture.
  
 In CampusIQ only the Orchestrator and Tutor Agent are in Amazon Bedrock AgentCore.The other four components are Lambda functions triggered by 
 EventBridge — they are not spokes in the AgentCore sense, they are separate event-driven processors. So the Hub and Spoke pattern applies specifically to the AgentCore layer.
+
+### 5.2 Lambda-Based Components
+
+When a student submits the Quiz, the Submit Lambda is triggered. It scores the quiz, builds concept_scores, 
+and writes quiz results to DynamoDB. The DynamoDB stream fires a quiz completed event that triggers
+the Gap Detection lambda. The Gap Detection lambda reads concept_scores from the event, looks up
+existing gap records from the DynamoDB for that student and calculates the gap_severity using weighted average of historical scores. It then
+updates the KnowledgeGap record to DynamoDB.
+
+The update triggers another event and if the gap_severity > 0.7, the recommendation lambda is triggered.
+It reads the student's gap profile from DynamoDB via GSI2, calls Amazon Personalize get_recommendations
+with gap context, and writes updated LearningPath record to DynamoDB with 24hr TTL. 
+
+The Assessment Lambda is triggered via HTTP POST /quiz/generate request when a teacher 
+clicks "Generate Quiz Draft" in the quiz editor. It receives the module content and then calls
+Bedrock InvokeModel and returns structured JSON quiz draft with concept tags on them. The teacher
+reviews, edits, and publishes the draft to make it available to students. 
+
+When a students gap_severity exceeds 0.85 the Content Adaptation Lambda rewrites the module Markdown
+content at a lower difficulty level. This only works on Markdown - PDF and video cannot be adapted. 
+The adapted variant is saved in S3 alongside the original.
+
+The Assessment Lambda and Content Adaptation Lambda are not part of the cognitive learning loop.
+The Assessment Lambda is part of teacher-facing flow and Adaptation lambda is an optional feature. 
+
+None of these components require specialized features such as conversational memory, RAG integration,
+or streaming token responses. They receive a single input, perform a specific task, and produce
+a single output. Lambda with direct Bedrock InvokeModel calls is simpler, cheaper,
+and faster for these event-driven processing tasks than running
+them in AgentCore.
+
+
