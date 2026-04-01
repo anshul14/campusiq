@@ -403,3 +403,17 @@ explanations, and corporate deployments use lower temperature for
 precise factual responses. The principle behind model selection
 is to match model capability to task complexity rather than cost.
 
+## 6. Authentication Architecture
+
+Most institutions already have their own Identity systems to authenticates the users. CampusIQ connects to the same IdP rather than replacing it.
+None of the users have to re-create a separate account for CampusIQ and can continue using the underlying IdP. This removes the single biggest adoption barrier. 
+
+### 6.1 The Login Flow
+
+When a user lands on CampusIQ login page and enters their institutional email, CampusIQ reads the domain and redirects the user to their institution's own IdP 
+login page (Microsoft, Google, or SAML provider). The users authenticate with their familiar IdP system with the existing username and password. 
+Once authenticated, users are redirected back to CampusIQ with an authorization code. CampusIQ exchanges the authorization code for tokens server side. 
+On successful login, the user lands on CampusIQ dashboard. Everything is transparent to the user — CampusIQ never sees the
+student's password and the whole process takes about 10 seconds.
+
+
