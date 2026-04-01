@@ -389,4 +389,17 @@ a single output. Lambda with direct Bedrock InvokeModel calls is simpler, cheape
 and faster for these event-driven processing tasks than running
 them in AgentCore.
 
+### 5.3 Model Selection
+
+CampusIQ makes use of different models for different tasks. 
+Claude 3.5 Sonnet is used for Orchestrator - that requires multi-step reasoning and context enrichment to make judgements, 
+Tutor Agent that needs conversational depth and nuanced educational explanations and Gap Detection Lambda that has to analyze concept scores.
+Claude 3 Haiku is used for Assessment Lambda that has simpler task of returning JSON output quickly and Content Adaptation Lambda that does rewriting of module - a comparatively
+lower complexity task. 
+Model selection is configurable per domain in the domain_config
+file — K-12 uses stricter settings and simpler models, university
+deployments use Sonnet with higher temperature for richer
+explanations, and corporate deployments use lower temperature for
+precise factual responses. The principle behind model selection
+is to match model capability to task complexity rather than cost.
 
