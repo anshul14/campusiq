@@ -416,4 +416,14 @@ Once authenticated, users are redirected back to CampusIQ with an authorization 
 On successful login, the user lands on CampusIQ dashboard. Everything is transparent to the user — CampusIQ never sees the
 student's password and the whole process takes about 10 seconds.
 
+### 6.2 Cognito as the Federation Broker
+
+Amazon Cognito sits between IdPs and the application. Without Cognito the application will have to handle three different protocols (Entra OIDC, Google OIDC, SAML 2.0)
+with three different token formats and three different validation mechanisms. Cognito makes all this handling trivial since it speaks all three protocols. It issues one consistent JWT 
+to the application regardless of the underlying IdP. The CampusIQ application only interacts with Cognito and does not have to care about the IdP. Cognito also handle claim 
+normalization. For example, Microsoft calls the user ID 'upn', Google calls it 'email', SAML calls it whatever — Cognito maps all of these to consistent attributes that the application understands.
+There is also a pre-token Lambda that fires before every token issuance. Its job is to enrich the JWT with CampusIQ-specific claims: institutionId, studentId, grade, idpProvider. 
+The Cognito sub then becomes the stable DynamoDB identifier — PK = STUDENT#{sub} surviving any future IdP changes.
+
+
 
