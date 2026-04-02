@@ -437,5 +437,22 @@ their IdP. Setup guides for each provider ship in the repository
 at docs/idp-setup/. Authentication is pluggable in the same way the CMS is - the institution brings their identity system
 and CampusIQ connects to it without requiring a new user directory.
 
+### 6.4 Role-Based Access Control
+
+CampusIQ uses two-layer role-based access control (RBAC). Cognito groups carry the coarse role in the JWT and the Lambda Authorizer at API Gateway 
+applies fine-grained resource-level policies on every API call. CampusIQ has five roles
 
 
+| Role                 | 	Description                                                                        | 	
+|----------------------|-------------------------------------------------------------------------------------|
+| Student              | 	Learners — view content, take quizzes, use AI Tutor, track own progress	           |
+| Teacher / Instructor | 	Course owners — upload content, view faculty dashboard, review quiz analytics      |
+| Admin	               | Deployment administrators — manage courses, users, plugin config, platform settings |
+| Parent / Guardian    | 	K-12 only — read-only view of their linked child's progress summary                |
+| Ops                  | 	Platform operator — the person or team who deployed and manages CampusIQ           |
+
+The Lambda Authorizer goes beyond Cognito's built-in authorizer —
+it enforces resource-level policies on every request. A student
+can only access their own quiz results, a teacher can only write
+to their assigned courses, and a parent can only read their linked
+child's progress data.
