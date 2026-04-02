@@ -604,4 +604,43 @@ infrastructure. This is not a marketing claim — it is an
 architectural guarantee enforced by the self-hosted deployment
 model itself.
 
+## 10. Extensibility
+
+CampusIQ is designed to be extended without modifying the core
+platform. Extensibility was a design constraint from the start — not an afterthought.
+
+### 10.1 Adding a CMS Plugin
+
+Any content management system can be integrated with CampusIQ
+by implementing the ContentPluginInterface. Create a Python class
+that extends ContentPluginInterface, implement the five abstract
+methods — fetch_content, search_content, list_courses, get_metadata,
+and ingest_content — and register the plugin type in
+campusiq.config.json. The core platform code does not change.
+The template plugin at src/application/plugins/content_plugin_interface/template/
+is the recommended starting point. Full documentation is in docs/cms-plugin-guide/.
+
+### 10.2 Adding a Domain Experience Plugin
+
+CampusIQ's behaviour is domain-configurable — the tutor persona,
+model selection, temperature, guardrails, and content restrictions
+all vary by deployment domain. Adding a new domain experience
+requires implementing the ExperiencePluginInterface — three
+methods: get_domain_config, get_guardrails_config, and
+get_model_routing_config. Register the domain type in
+campusiq.config.json and the platform loads it at runtime.
+The existing university, k12, and corporate plugins serve as
+reference implementations. Full documentation is in
+docs/experience-plugin-guide/.
+
+### 10.3 Community Contributions
+
+CampusIQ welcomes community contributions — new CMS plugins,
+new domain experience plugins, bug fixes, and documentation
+improvements. The plugin architecture is specifically designed
+to make community contributions self-contained — a contributor
+building a Moodle plugin or a Canvas plugin does not need to
+understand or modify the core platform. See CONTRIBUTING.md
+for how to submit a contribution.
+
 
