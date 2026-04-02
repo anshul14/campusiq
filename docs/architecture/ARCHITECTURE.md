@@ -556,4 +556,52 @@ than CloudFormation and is less verbose and more readable. CampusIQ also ships C
 HCL - an additional language for contributors. CloudFormation YAML is too verbose for complex infrastructure — CDK's higher-level abstractions produce significantly more readable and maintainable code.
 
 
+## 9. Deployment Model
+
+CampusIQ is deployed to the institution's own AWS account using
+a single CDK command form the CLI — cdk deploy. The entire platform is
+provisioned from code with no manual console configuration needed.
+
+### 9.1 What Gets Provisioned
+
+Running cdk deploy provisions the complete CampusIQ infrastructure
+in the institution's own AWS account. This includes a Cognito User
+Pool with IdP federation configured, a DynamoDB table with three
+GSIs and Streams enabled, an S3 bucket with versioning and a
+CloudFront distribution, an API Gateway REST API with Lambda
+Authorizer, all Lambda functions for backend compute, a Bedrock
+Knowledge Base with OpenSearch Serverless as the vector store,
+an Amazon Personalize dataset group and event tracker, an
+EventBridge custom event bus for the Cognitive Loop, and
+CloudWatch for structured logging across all components.
+Everything the platform needs to operate is created in one
+command with no dependencies on any external CampusIQ infrastructure.
+
+### 9.2 Configuration
+
+The entire deployment is driven by a single configuration file —
+campusiq.config.json. The institution fills in four sections:
+deployment specifies the AWS region, name, and environment;
+idp specifies the identity provider type and credentials;
+cms_plugin specifies which CMS plugin to activate and any field
+mapping overrides; and domain specifies whether the deployment
+is for a university, K-12, or corporate context. CDK reads this
+file and configures every resource accordingly. For example — a university
+deployment gets different Bedrock Guardrails settings than a K-12
+deployment. The repository ships campusiq.config.example.json
+as a template. The actual campusiq.config.json is gitignored so
+credentials are never committed to source control.
+
+### 9.3 Data Residency
+
+Every AWS resource is provisioned in the institution's own AWS
+account. The institution chooses the region — European institutions
+can deploy to eu-west-1 for GDPR compliance, US institutions can
+deploy to us-east-1 or any else. CampusIQ as an open source project has zero
+visibility into any institution's deployment — there is no central
+CampusIQ server, no telemetry, and no data leaving the institution's
+infrastructure. This is not a marketing claim — it is an
+architectural guarantee enforced by the self-hosted deployment
+model itself.
+
 
