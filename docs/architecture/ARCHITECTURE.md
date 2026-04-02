@@ -425,5 +425,17 @@ normalization. For example, Microsoft calls the user ID 'upn', Google calls it '
 There is also a pre-token Lambda that fires before every token issuance. Its job is to enrich the JWT with CampusIQ-specific claims: institutionId, studentId, grade, idpProvider. 
 The Cognito sub then becomes the stable DynamoDB identifier — PK = STUDENT#{sub} surviving any future IdP changes.
 
+### 6.3 Supported Identity Providers
+
+CampusIQ supports three identity provider patterns out of the box. 
+Microsoft Entra ID uses OIDC protocol. The institution registers CampusIQ as an enterprise application in their Entra tenant and provides the tenantId and client credentials.
+Google Workspace also uses OIDC protocol - as a safety measure the hd parameter restricts login to the institution's domain only, blocking personal Gmail accounts from 
+accessing the platform, which is critical for K-12 deployments. SAML 2.0 covers
+any other institutional IdP — Okta, Shibboleth, PingFederate, and
+ADFS are all supported. To establish trust relationship between the institution's IdP and CampusIQ the institution's IT team needs to import the CampusIQ SP metadata XML into 
+their IdP. Setup guides for each provider ship in the repository
+at docs/idp-setup/. Authentication is pluggable in the same way the CMS is - the institution brings their identity system
+and CampusIQ connects to it without requiring a new user directory.
+
 
 
