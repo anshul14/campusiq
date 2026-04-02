@@ -500,4 +500,15 @@ All three content types are stored differently - markdown as content.md,PDFs as 
 maintain history, S3 versioning is enabled retaining the latest 10 versions per object. To reduce latency, Amazon CloudFront serves static content to students. S3 also serves 
 as the knowledge store for Amazon Bedrock Knowledge Bases. 
 
+### 7.3 — DynamoDB Streams and the Analytics Pipeline
+
+The operational data and analytics data are kept separate so as
+not to overburden a single data source. DynamoDB Streams feed
+two separate pipelines — a stream processor fires EventBridge
+events to trigger the Cognitive Learning Loop, and a second
+stream processor writes data to an S3 analytics lake where it
+flows through Glue and Athena into QuickSight. The operational
+DynamoDB table is never queried for analytics, keeping it free
+for low-latency student interactions without degrading performance.
+
 
