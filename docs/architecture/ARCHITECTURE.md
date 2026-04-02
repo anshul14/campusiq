@@ -511,4 +511,49 @@ flows through Glue and Athena into QuickSight. The operational
 DynamoDB table is never queried for analytics, keeping it free
 for low-latency student interactions without degrading performance.
 
+## 8. Technology Decisions
+
+Every technology choice in CampusIQ was made deliberately. This section documents the reasoning behind each major decision.
+
+### 8.1 Python over TypeScript for Backend
+
+Python is the primary backend language for backend and CDK code. Boto3 is mature, well-documented, 
+and first class in Lambda. Having a good understanding and familiarity with Python reduces cognitive load during development. It also reduces the adoption curve for the
+platform as Python has a broad base in the developer community. Typescript is used for the frontend — Next.js and React components. There is a clear split between the languages - no 
+language confusion between layers. 
+
+### 8.2 DynamoDB over Relational Database
+
+CampusIQ has predictable key-value lookups and not complex joins, so a NoSql database makes sense. Also, DynamoDB is serverless and scales to zero when not in use, which is
+a huge cost benefits for small institutions. Adding a new attribute to any entity is a write operation and not an ALTER TABLE like in a relational database. 
+Native DynamoDB streams integration powers the Cognitive Loop and Analytics pipeline. No middleware logic is required to trigger them. Also, analytics queries goes to Athena 
+not DynamoDB — so the lack of SQL on the operational DB is not a limitation.
+
+### 8.3 Amazon Bedrock AgentCore over Custom Orchestration
+
+Building a custom production grade orchestration layer is technically complex and operationally expensive. AgentCore is a production grade runtime service
+that provides different features such as Agent Runtime, built-in session support, and native knowledge base integration which makes it an obvious choice for the platform. 
+With AgentCore there is no operational overhead of maintaining infrastructure. AgentCore does add latency versus a custom solution but the operational simplicity outweighs that
+for a self-hosted open source framework. 
+
+### 8.4 FastAPI over Flask or Django
+
+FastAPI shines in performance being significantly faster than Flask for async workloads. It has an excellent Async support which is important for streaming Bedrock responses. 
+FastAPI also has native integration with Pydantic for request validation and OpenAPI docs are generated automatically. CampusIQ does not need an ORM, admin panel, or template
+engine - hence Django was ruled out. 
+
+### 8.5 REST over GraphQL
+
+REST has a broad adoption and is widely understood by the open source contributors which made it a viable choice. API Gateway has native REST support with built-in
+Lambda Authorizer integration. CampusIQ's access patterns are well-defined and bounded and hence GraphQL was not needed whose main advantage lies in its flexible querying. 
+Multi-entity page loads are solved with composite GET endpoints e.g. GET /courses/{courseId}/dashboard returns everything the faculty dashboard needs in one call.
+GraphQL would have added complexity in the framework that would have deterred open source contributors.
+
+### 8.6 AWS CDK over Terraform or CloudFormation
+
+CDK has Python support that matches the backend language and helps in making one language throughout the infrastructure layer. CDK also provides higher-level abstractions
+than CloudFormation and is less verbose and more readable. CampusIQ also ships CDK constructs that institutions can customise. Choosing Terraform would have required learning
+HCL - an additional language for contributors. CloudFormation YAML is too verbose for complex infrastructure — CDK's higher-level abstractions produce significantly more readable and maintainable code.
+
+
 
