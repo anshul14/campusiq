@@ -493,3 +493,11 @@ the same severity sort key, so querying with SK >= 0.700 returns
 all students in a course whose gap severity has crossed the
 at-risk threshold in one efficient query.
 
+### 7.2 Content Storage
+
+All content for an institution is written in its own S3 bucket in a convention-based folder structure {domain}/{courseId}/modules/{moduleId}/content.md.
+All three content types are stored differently - markdown as content.md,PDFs as .pdf, and video as HLS segment plus transcript.vtt. To prevent accidental deletions and 
+maintain history, S3 versioning is enabled retaining the latest 10 versions per object. To reduce latency, Amazon CloudFront serves static content to students. S3 also serves 
+as the knowledge store for Amazon Bedrock Knowledge Bases. 
+
+
