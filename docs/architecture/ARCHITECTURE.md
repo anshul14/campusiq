@@ -456,3 +456,40 @@ it enforces resource-level policies on every request. A student
 can only access their own quiz results, a teacher can only write
 to their assigned courses, and a parent can only read their linked
 child's progress data.
+
+## 7. Data Architecture
+
+CampusIQ uses two different data stores. DynamoDB for operational data and S3 for content. They serve different needs. 
+
+### 7.1 Single-Table Design
+
+CampusIQ uses a single DynamoDB table per deployment for all operational data. 
+All entities — courses, modules, students, enrolments, progress, quiz results, gaps, learning paths — live in one table partitioned by composite keys. DynamoDB cannot
+join tables efficiently and hence everything related is co-located under the same partition key.
+This is the DynamoDB best practice for serverless applications: it minimises hot partitions, eliminates cross-table transactions, 
+and enables efficient composite queries via GSIs. For example, a course record has PK = COURSE#phys101 and
+SK = METADATA, a student profile has PK = STUDENT#abc and
+SK = PROFILE, and a progress record has PK = STUDENT#abc and
+SK = PROGRESS#phys101#week3 — all in the same table, distinguished
+only by their key values.
+
+DynamoDB's on-demand billing model also makes it the right choice
+for self-hosted deployments — it scales to zero when idle, meaning
+small institutions with 200 students pay nothing outside active
+usage hours.
+
+CampusIQ uses three Global Secondary Indexes on the main table, each serving a different purpose and built for a specific query category. 
+GSI1 enables course-scoped queries for teachers and administrators. It flips the query axis so that querying GSI1 with PK = COURSE#{courseId}
+returns all students enrolled in a course, all quiz results, and
+all progress records without scanning every student record
+individually. 
+GSI2 enables the Orchestrator to retrieve a
+student's weakest concepts in a single query — it uses
+PK = STUDENT#{sub} with a zero-padded severity string as the
+sort key, so querying with ScanIndexForward=False returns the
+highest severity gaps first. GSI3 enables at-risk detection for
+the faculty alert system — it uses PK = COURSE#{courseId} with
+the same severity sort key, so querying with SK >= 0.700 returns
+all students in a course whose gap severity has crossed the
+at-risk threshold in one efficient query.
+
