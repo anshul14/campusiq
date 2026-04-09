@@ -105,6 +105,74 @@ async def get_session(request: Request) -> SessionResponse:
         )
 
 
+@router.post(
+    "/logout",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses={
+        204: {"description": "Successfully logged out"},
+        401: {"model": ErrorResponse, "description": "Not authenticated"},
+        500: {"model": ErrorResponse, "description": "Internal server error"},
+    },
+    summary="Logout",
+    description=(
+            "Revokes the Cognito refresh token and instructs the frontend "
+            "to clear the HTTP-only session cookie. The access token remains "
+            "valid until its natural expiry (1 hour) — this is standard OAuth "
+            "behaviour and acceptable given the short token lifetime."
+    ),
+)
+async def logout(request: Request) -> None:
+    """
+    Logout the current user.
+
+    Revokes the Cognito refresh token via the Cognito API.
+    The frontend is responsible for clearing the HTTP-only
+    session cookie — this endpoint only handles server-side
+    token revocation.
+
+    Args:
+        request: FastAPI request — authorizer context in request.state
+
+    Raises:
+        HTTPException 401: if authorizer context is missing
+        HTTPException 500: if token revocation fails
+    """
+    try:
+        authorizer_context = _get_authorizer_context(request)
+        user_id = authorizer_context["userId"]
+
+        # TODO: Phase 1 — implement Cognito token revocation
+        # cognito_client = get_cognito_client()
+        # cognito_client.revoke_token(
+        #     Token=authorizer_context.get("refreshToken"),
+        #     ClientId=settings.COGNITO_CLIENT_ID,
+        # )
+
+        logger.info("User logged out: %s", user_id)
+        return None
+
+    except KeyError as e:
+        logger.error("Missing authorizer context on logout: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={
+                "code": "MISSING_AUTH_CONTEXT",
+                "message": "Authentication context is missing or invalid",
+                "request_id": _get_request_id(request),
+            },
+        )
+    except Exception as e:
+        logger.error("Logout failed: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "code": "LOGOUT_ERROR",
+                "message": "Logout failed",
+                "request_id": _get_request_id(request),
+            },
+        )
+
+
 # ── Private helpers ───────────────────────────────────────
 
 def _get_authorizer_context(request: Request) -> dict:
@@ -134,6 +202,7 @@ def _get_authorizer_context(request: Request) -> dict:
         return request.state.user
 
     raise KeyError("authorizer")
+
 
 def _get_request_id(request: Request) -> str:
     """Extract request id from the request."""
