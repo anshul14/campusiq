@@ -20,7 +20,7 @@ from fastapi import APIRouter, Request
 from src.application.schemas import CourseResponse, CourseListResponse, UpdateCourseResponse, \
     CreateCourseResponse, CreateCourseRequest, UpdateCourseRequest, ModuleListResponse, ModuleResponse, \
     CreateModuleRequest, CreateModuleResponse, UpdateModuleRequest, UpdateModuleResponse, CourseStudentListResponse, \
-    EnrolStudentsRequest, EnrolStudentsResponse
+    EnrolStudentsRequest, EnrolStudentsResponse, CourseProgressResponse
 
 logger = logging.getLogger(__name__)
 
@@ -137,4 +137,14 @@ async def enrol_students(
         body: EnrolStudentsRequest,
         request: Request,
 ) -> EnrolStudentsResponse:
+    pass
+
+
+@router.get("/{course_id}/progress", response_model=CourseProgressResponse)
+async def get_course_progress(
+        course_id: str,
+        request: Request,
+        module_id: str = None,
+
+) -> CourseProgressResponse:
     pass
