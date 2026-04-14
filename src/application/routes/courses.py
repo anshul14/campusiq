@@ -18,7 +18,8 @@ import logging
 from fastapi import APIRouter, Request
 
 from src.application.schemas import CourseResponse, CourseListResponse, UpdateCourseResponse, \
-    CreateCourseResponse, CreateCourseRequest, UpdateCourseRequest
+    CreateCourseResponse, CreateCourseRequest, UpdateCourseRequest, ModuleListResponse, ModuleResponse, \
+    CreateModuleRequest, CreateModuleResponse, UpdateModuleRequest, UpdateModuleResponse
 
 logger = logging.getLogger(__name__)
 
@@ -69,6 +70,46 @@ async def create_course(
 @router.delete("/{course_id}", status_code=204)
 async def delete_course(
         course_id: str,
+        request: Request,
+) -> None:
+    pass
+
+@router.get("/{course_id}/modules", response_model=ModuleListResponse)
+async def get_modules(
+        request: Request,
+        course_id: str,
+) -> ModuleListResponse:
+    pass
+
+@router.get("/{course_id}/modules/{module_id}", response_model=ModuleResponse)
+async def get_module(
+        request: Request,
+        course_id: str,
+        module_id: str,
+) -> ModuleResponse:
+    pass
+
+@router.post("/{course_id}/modules", response_model=CreateModuleResponse)
+async def create_module(
+        request: Request,
+        course_id: str,
+        body: CreateModuleRequest,
+) -> CreateModuleResponse:
+    pass
+
+@router.patch("/{course_id}/modules/{module_id}", response_model=UpdateModuleResponse)
+async def  update_module(
+        course_id: str,
+        module_id: str,
+        request: Request,
+        body: UpdateModuleRequest,
+) -> UpdateModuleResponse:
+    pass
+
+@router.delete("/{course_id}/modules/{module_id}", status_code=204)
+async def delete_module(
+        course_id: str,
+        module_id: str,
         request: Request,
 ) -> None:
     pass

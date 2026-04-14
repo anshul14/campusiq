@@ -248,6 +248,10 @@ class CreateModuleResponse(BaseModel):
     status:           CourseStatusEnum    = CourseStatusEnum.DRAFT
     ingestion_status: IngestionStatusEnum = IngestionStatusEnum.PENDING
 
+class UpdateModuleResponse(BaseModel):
+    """PATCH /api/v1/courses/{courseId}/modules/{moduleId}"""
+    module_id:  str
+    updated_at: str
 
 # ─────────────────────────────────────────────────────
 # CONTENT UPLOAD SCHEMAS
