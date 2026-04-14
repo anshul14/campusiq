@@ -19,7 +19,8 @@ from fastapi import APIRouter, Request
 
 from src.application.schemas import CourseResponse, CourseListResponse, UpdateCourseResponse, \
     CreateCourseResponse, CreateCourseRequest, UpdateCourseRequest, ModuleListResponse, ModuleResponse, \
-    CreateModuleRequest, CreateModuleResponse, UpdateModuleRequest, UpdateModuleResponse
+    CreateModuleRequest, CreateModuleResponse, UpdateModuleRequest, UpdateModuleResponse, CourseStudentListResponse, \
+    EnrolStudentsRequest, EnrolStudentsResponse
 
 logger = logging.getLogger(__name__)
 
@@ -74,12 +75,14 @@ async def delete_course(
 ) -> None:
     pass
 
+
 @router.get("/{course_id}/modules", response_model=ModuleListResponse)
 async def get_modules(
         request: Request,
         course_id: str,
 ) -> ModuleListResponse:
     pass
+
 
 @router.get("/{course_id}/modules/{module_id}", response_model=ModuleResponse)
 async def get_module(
@@ -89,6 +92,7 @@ async def get_module(
 ) -> ModuleResponse:
     pass
 
+
 @router.post("/{course_id}/modules", response_model=CreateModuleResponse)
 async def create_module(
         request: Request,
@@ -97,8 +101,9 @@ async def create_module(
 ) -> CreateModuleResponse:
     pass
 
+
 @router.patch("/{course_id}/modules/{module_id}", response_model=UpdateModuleResponse)
-async def  update_module(
+async def update_module(
         course_id: str,
         module_id: str,
         request: Request,
@@ -106,10 +111,30 @@ async def  update_module(
 ) -> UpdateModuleResponse:
     pass
 
+
 @router.delete("/{course_id}/modules/{module_id}", status_code=204)
 async def delete_module(
         course_id: str,
         module_id: str,
         request: Request,
 ) -> None:
+    pass
+
+
+@router.get("/{course_id}/students", response_model=CourseStudentListResponse)
+async def list_course_students(
+        course_id: str,
+        request: Request,
+        cursor: str = None,
+        page_size: int = 50,
+) -> CourseStudentListResponse:
+    pass
+
+
+@router.post("/{course_id}/enrolments", response_model=EnrolStudentsResponse, status_code=201)
+async def enrol_students(
+        course_id: str,
+        body: EnrolStudentsRequest,
+        request: Request,
+) -> EnrolStudentsResponse:
     pass
