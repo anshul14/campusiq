@@ -22,7 +22,7 @@ from src.application.schemas import CourseResponse, CourseListResponse, UpdateCo
     CreateModuleRequest, CreateModuleResponse, UpdateModuleRequest, UpdateModuleResponse, CourseStudentListResponse, \
     EnrolStudentsRequest, EnrolStudentsResponse, CourseProgressResponse, QuizDefinitionResponse, GenerateQuizResponse, \
     GenerateQuizRequest, SaveQuizResponse, SaveQuizRequest, QuizAttemptResponse, SubmitQuizResponse, SubmitQuizRequest, \
-    CourseQuizResultsResponse
+    CourseQuizResultsResponse, CourseGapsResponse
 
 logger = logging.getLogger(__name__)
 
@@ -149,6 +149,15 @@ async def get_course_progress(
         module_id: str = None,
 
 ) -> CourseProgressResponse:
+    pass
+
+
+# Gaps
+@router.get("/{course_id}/gaps", response_model=CourseGapsResponse)
+async def get_gaps(
+        course_id: str,
+        request: Request,
+) -> CourseGapsResponse:
     pass
 
 
