@@ -22,7 +22,7 @@ from src.application.schemas import CourseResponse, CourseListResponse, UpdateCo
     CreateModuleRequest, CreateModuleResponse, UpdateModuleRequest, UpdateModuleResponse, CourseStudentListResponse, \
     EnrolStudentsRequest, EnrolStudentsResponse, CourseProgressResponse, QuizDefinitionResponse, GenerateQuizResponse, \
     GenerateQuizRequest, SaveQuizResponse, SaveQuizRequest, QuizAttemptResponse, SubmitQuizResponse, SubmitQuizRequest, \
-    CourseQuizResultsResponse, CourseGapsResponse, DashboardResponse, AtRiskResponse
+    CourseQuizResultsResponse, CourseGapsResponse, DashboardResponse, AtRiskResponse, IngestionStatusResponse
 
 logger = logging.getLogger(__name__)
 
@@ -176,8 +176,16 @@ async def get_at_risk_students(
 ) -> AtRiskResponse:
     pass
 
-# Quiz
 
+@router.get("/{course_id}/modules/{module_id}/ingestion-status", response_model=IngestionStatusResponse)
+async def get_bedrock_kb_ingestion_status_for_module(
+        course_id: str,
+        module_id: str,
+        request: Request,
+) -> IngestionStatusResponse:
+    pass
+
+# Quiz
 
 @router.get("/{course_id}/modules/{module_id}/quiz", response_model=QuizDefinitionResponse)
 async def get_quiz_definition(
@@ -234,3 +242,4 @@ async def get_course_quiz_results(
         request: Request,
 ) -> CourseQuizResultsResponse:
     pass
+

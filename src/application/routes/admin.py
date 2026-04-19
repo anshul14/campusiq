@@ -19,7 +19,7 @@ from fastapi import APIRouter, Request
 
 from src.application.schemas import UserListResponse, ChangeRoleRequest, ChangeRoleResponse, AssignTeacherResponse, \
     AssignTeacherRequest, CMSPluginConfigResponse, UpdateCMSPluginRequest, DomainConfigResponse, \
-    UpdateDomainConfigRequest
+    UpdateDomainConfigRequest, TriggerSyncResponse, SyncJobStatusResponse, TriggerSyncRequest
 
 logger = logging.getLogger(__name__)
 
@@ -90,4 +90,20 @@ async def update_domain(
         request: Request,
         body: UpdateDomainConfigRequest
 ) -> DomainConfigResponse:
+    pass
+
+
+@router.post("/cms/sync", response_model=TriggerSyncResponse)
+async def sync_cms(
+        request: Request,
+        body: TriggerSyncRequest
+) -> TriggerSyncResponse:
+    pass
+
+
+@router.get("/cms/sync/{job_id}", response_model=SyncJobStatusResponse)
+async def get_status_cms_sync(
+        job_id: str,
+        request: Request,
+) -> SyncJobStatusResponse:
     pass
