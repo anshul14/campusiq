@@ -19,7 +19,8 @@ from fastapi import APIRouter, Request
 
 from src.application.schemas import UserListResponse, ChangeRoleRequest, ChangeRoleResponse, AssignTeacherResponse, \
     AssignTeacherRequest, CMSPluginConfigResponse, UpdateCMSPluginRequest, DomainConfigResponse, \
-    UpdateDomainConfigRequest, TriggerSyncResponse, SyncJobStatusResponse, TriggerSyncRequest
+    UpdateDomainConfigRequest, TriggerSyncResponse, SyncJobStatusResponse, TriggerSyncRequest, CreateParentLinkRequest, \
+    CreateParentLinkResponse
 
 logger = logging.getLogger(__name__)
 
@@ -106,4 +107,12 @@ async def get_status_cms_sync(
         job_id: str,
         request: Request,
 ) -> SyncJobStatusResponse:
+    pass
+
+
+@router.post("/parent-links", response_model=CreateParentLinkResponse)
+async def parent_links(
+        request: Request,
+        body: CreateParentLinkRequest
+) -> CreateParentLinkResponse:
     pass
