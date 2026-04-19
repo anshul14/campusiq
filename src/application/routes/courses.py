@@ -22,7 +22,7 @@ from src.application.schemas import CourseResponse, CourseListResponse, UpdateCo
     CreateModuleRequest, CreateModuleResponse, UpdateModuleRequest, UpdateModuleResponse, CourseStudentListResponse, \
     EnrolStudentsRequest, EnrolStudentsResponse, CourseProgressResponse, QuizDefinitionResponse, GenerateQuizResponse, \
     GenerateQuizRequest, SaveQuizResponse, SaveQuizRequest, QuizAttemptResponse, SubmitQuizResponse, SubmitQuizRequest, \
-    CourseQuizResultsResponse, CourseGapsResponse
+    CourseQuizResultsResponse, CourseGapsResponse, DashboardResponse, AtRiskResponse
 
 logger = logging.getLogger(__name__)
 
@@ -160,6 +160,21 @@ async def get_gaps(
 ) -> CourseGapsResponse:
     pass
 
+
+@router.get("/{course_id}/dashboard", response_model=DashboardResponse)
+async def get_faculty_dashboard(
+        course_id: str,
+        request: Request,
+) -> DashboardResponse:
+    pass
+
+
+@router.get("/{course_id}/at-risk", response_model=AtRiskResponse)
+async def get_at_risk_students(
+        course_id: str,
+        request: Request,
+) -> AtRiskResponse:
+    pass
 
 # Quiz
 

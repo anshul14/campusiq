@@ -35,15 +35,16 @@ Local Development:
     ASGI server instead.
 """
 
-
+import os
 
 from fastapi import FastAPI
-from mangum import Mangum
 from fastapi.middleware.cors import CORSMiddleware
-import os
+from mangum import Mangum
+
 from src.application.routes.auth import router as auth_router
 from src.application.routes.courses import router as courses_router
 from src.application.routes.students import router as students_router
+from src.application.routes.teacher import router as teacher_router
 from src.application.routes.tutor import router as tutor_router
 
 app = FastAPI(
@@ -67,5 +68,6 @@ app.include_router(auth_router, prefix="/api/v1")
 app.include_router(courses_router, prefix="/api/v1")
 app.include_router(students_router, prefix="/api/v1")
 app.include_router(tutor_router, prefix="/api/v1")
+app.include_router(teacher_router, prefix="/api/v1")
 
 handler = Mangum(app)
