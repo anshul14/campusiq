@@ -46,7 +46,7 @@ from src.application.routes.courses import router as courses_router
 from src.application.routes.students import router as students_router
 from src.application.routes.teacher import router as teacher_router
 from src.application.routes.tutor import router as tutor_router
-
+from src.application.routes.admin import router as admin_router
 app = FastAPI(
     title="CampusIQ API",
     description="AI-native adaptive learning platform",
@@ -69,5 +69,5 @@ app.include_router(courses_router, prefix="/api/v1")
 app.include_router(students_router, prefix="/api/v1")
 app.include_router(tutor_router, prefix="/api/v1")
 app.include_router(teacher_router, prefix="/api/v1")
-
+app.include_router(admin_router, prefix="/api/v1")
 handler = Mangum(app)
