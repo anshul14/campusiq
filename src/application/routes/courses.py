@@ -22,7 +22,9 @@ from src.application.schemas import CourseResponse, CourseListResponse, UpdateCo
     CreateModuleRequest, CreateModuleResponse, UpdateModuleRequest, UpdateModuleResponse, CourseStudentListResponse, \
     EnrolStudentsRequest, EnrolStudentsResponse, CourseProgressResponse, QuizDefinitionResponse, GenerateQuizResponse, \
     GenerateQuizRequest, SaveQuizResponse, SaveQuizRequest, QuizAttemptResponse, SubmitQuizResponse, SubmitQuizRequest, \
-    CourseQuizResultsResponse, CourseGapsResponse, DashboardResponse, AtRiskResponse, IngestionStatusResponse
+    CourseQuizResultsResponse, CourseGapsResponse, DashboardResponse, AtRiskResponse, IngestionStatusResponse, \
+    ContentPresignResponse, ContentPresignRequest, ContentCompleteResponse, ContentCompleteRequest, \
+    SaveTextContentResponse, SaveTextContentRequest
 
 logger = logging.getLogger(__name__)
 
@@ -185,6 +187,7 @@ async def get_bedrock_kb_ingestion_status_for_module(
 ) -> IngestionStatusResponse:
     pass
 
+
 # Quiz
 
 @router.get("/{course_id}/modules/{module_id}/quiz", response_model=QuizDefinitionResponse)
@@ -243,3 +246,34 @@ async def get_course_quiz_results(
 ) -> CourseQuizResultsResponse:
     pass
 
+
+# Content Upload
+
+@router.post("/{course_id}/modules/{module_id}/content/presign", response_model=ContentPresignResponse)
+async def presign_content_upload(
+        course_id: str,
+        module_id: str,
+        body: ContentPresignRequest,
+        request: Request,
+) -> ContentPresignResponse:
+    pass
+
+
+@router.post("/{course_id}/modules/{module_id}/content/complete", response_model=ContentCompleteResponse)
+async def complete_content_upload(
+        course_id: str,
+        module_id: str,
+        body: ContentCompleteRequest,
+        request: Request,
+) -> ContentCompleteResponse:
+    pass
+
+
+@router.put("/{course_id}/modules/{module_id}/content/text", response_model=SaveTextContentResponse)
+async def save_text_content(
+        course_id: str,
+        module_id: str,
+        body: SaveTextContentRequest,
+        request: Request,
+) -> SaveTextContentResponse:
+    pass
