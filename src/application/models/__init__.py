@@ -23,7 +23,7 @@ from .quiz     import QuizDefinition, QuizResult, QuizQuestion, QuizAnswer, Quiz
 from .gap      import KnowledgeGap, LearningPath
 from .parent   import ParentChildLink, LinkStatus
 from .config   import CMSPluginConfig, DomainConfig, IngestionManifest
-from .         import dynamodb_keys
+from src.application.utils import dynamodb_keys
 
 __all__ = [
     # Course
