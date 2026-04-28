@@ -23,6 +23,7 @@ table = dynamodb.Table(os.getenv("DYNAMODB_TABLE_NAME", ""))
 
 ENTITY_TYPE_INDEX = "EntityTypeIndex"
 
+
 # Encode LastEvaluatedKey -> opaque cursor string
 def encode_cursor(last_evaluated_key: dict) -> str:
     json_string = json.dumps(last_evaluated_key)
@@ -34,13 +35,25 @@ def decode_cursor(cursor: str) -> dict:
     json_string = base64.b64decode(cursor.encode()).decode()
     return json.loads(json_string)
 
+
+def _map_to_course_summary(item: dict) -> dict:
+    return {
+        "course_id": item["PK"].replace("COURSE#", ""),
+        "title": item.get("title", ""),
+        "description": item.get("description", ""),
+        "domain": item.get("domain", ""),
+        "difficulty": item.get("difficulty", ""),
+        "status": item.get("status", ""),
+        "module_count": item.get("module_count", 0),
+    }
+
+
 def list_all_courses(
         domain: str = None,
         status: str = None,
         cursor: str = None,
         page_size: int = 20,
 ) -> dict:
-
     kwargs = {
         "IndexName": ENTITY_TYPE_INDEX,
         "KeyConditionExpression": Key("entity_type").eq("COURSE"),
@@ -63,6 +76,6 @@ def list_all_courses(
         **kwargs
     )
     return {
-        "items": response["Items"],
+        "items": [_map_to_course_summary(item) for item in response["Items"]],
         "next_cursor": encode_cursor(response["LastEvaluatedKey"]) if "LastEvaluatedKey" in response else None,
     }

@@ -25,6 +25,8 @@ from src.application.schemas import CourseResponse, CourseListResponse, UpdateCo
     CourseQuizResultsResponse, CourseGapsResponse, DashboardResponse, AtRiskResponse, IngestionStatusResponse, \
     ContentPresignResponse, ContentPresignRequest, ContentCompleteResponse, ContentCompleteRequest, \
     SaveTextContentResponse, SaveTextContentRequest
+from src.application.schemas import CourseSummary
+from src.application.services import dynamodb as db
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +45,19 @@ async def get_courses(
         page_size: int = 20,  # GET /courses?page_size=50
 
 ) -> CourseListResponse:
-    pass
+    authorizer_context = request.state.authorizer
+    role = authorizer_context["role"]
+
+    if role == "ADMIN":
+        result = db.list_all_courses(domain=domain, status=status, cursor=cursor, page_size=page_size)
+    else:
+        # TODO: Phase 2 - Implement student and teacher filtered views
+        result = db.list_all_courses(domain=domain, status=status, cursor=cursor, page_size=page_size)
+
+    return CourseListResponse(
+        courses=[CourseSummary(**item) for item in result["items"]],
+        next_cursor=result["next_cursor"]
+    )
 
 
 @router.get("/{course_id}", response_model=CourseResponse)
