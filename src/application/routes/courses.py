@@ -15,7 +15,7 @@ These routes handle CRUD course operations.
 
 import logging
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, HTTPException
 
 from src.application.schemas import CourseResponse, CourseListResponse, UpdateCourseResponse, \
     CreateCourseResponse, CreateCourseRequest, UpdateCourseRequest, ModuleListResponse, ModuleResponse, \
@@ -65,7 +65,27 @@ async def get_course(
         course_id: str,
         request: Request
 ) -> CourseResponse:
-    pass
+    authorizer_context = request.state.authorizer
+    role = authorizer_context["role"]
+    user_id = authorizer_context["userId"]
+    result = None
+    if role == "ADMIN":
+        # fetch course directly
+        result = db.get_course_by_id(course_id=course_id)
+    elif role == "TEACHER":
+        # verify teacher assignment to course first
+        if not db.teacher_is_assigned_to_course(teacher_id=user_id, course_id=course_id):
+            raise HTTPException(status_code=403, detail="Teacher not assigned to course")
+        result = db.get_course_by_id(course_id=course_id)
+    elif role == "STUDENT":
+        # verify student enrolment to course first
+        if not db.student_is_enrolled_to_course(student_id=user_id, course_id=course_id):
+            raise HTTPException(status_code=403, detail="Student not enrolled to course")
+        result = db.get_course_by_id(course_id=course_id)
+    if result is None:
+        raise HTTPException(status_code=404,
+                            detail={"code": "COURSE_NOT_FOUND", "message": f"Course {course_id} not found"})
+    return CourseResponse(**result)
 
 
 @router.patch("/{course_id}", response_model=UpdateCourseResponse)

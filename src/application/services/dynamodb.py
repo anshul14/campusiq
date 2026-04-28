@@ -48,6 +48,22 @@ def _map_to_course_summary(item: dict) -> dict:
     }
 
 
+def _map_to_course_response(item: dict) -> dict:
+    return {
+        "course_id": item["PK"].replace("COURSE#", ""),
+        "title": item.get("title", ""),
+        "description": item.get("description", ""),
+        "domain": item.get("domain", ""),
+        "difficulty": item.get("difficulty", ""),
+        "status": item.get("status", ""),
+        "module_order": item.get("module_order", []),
+        "cms_source": item.get("cms_source", ""),
+        "created_by": item.get("created_by", ""),
+        "created_at": item.get("created_at", ""),
+        "updated_at": item.get("updated_at", ""),
+    }
+
+
 def list_all_courses(
         domain: str = None,
         status: str = None,
@@ -79,3 +95,31 @@ def list_all_courses(
         "items": [_map_to_course_summary(item) for item in response["Items"]],
         "next_cursor": encode_cursor(response["LastEvaluatedKey"]) if "LastEvaluatedKey" in response else None,
     }
+
+
+def get_course_by_id(course_id: str) -> dict | None:
+    response = table.get_item(Key={"PK": f"COURSE#{course_id}", "SK": "METADATA"})
+    item = response.get("Item")  # None if not found
+    if item is None:
+        return None
+    return _map_to_course_response(item)
+
+
+def teacher_is_assigned_to_course(teacher_id: str, course_id: str) -> bool:
+    response = table.get_item(
+        Key={
+            "PK": f"TEACHER#{teacher_id}",
+            "SK": f"TEACHES#{course_id}"
+        }
+    )
+    return response.get("Item") is not None
+
+
+def student_is_enrolled_to_course(student_id: str, course_id: str) -> bool:
+    response = table.get_item(
+        Key={
+            "PK": f"STUDENT#{student_id}",
+            "SK": f"ENROL#{course_id}"
+        }
+    )
+    return response.get("Item") is not None
