@@ -13,9 +13,12 @@ import base64
 import json
 import os
 
+
 import boto3
 from aws_lambda_powertools import Logger
 from boto3.dynamodb.conditions import Key, Attr
+from botocore.exceptions import ClientError
+
 
 logger = Logger(service="dynamodb-service")
 dynamodb = boto3.resource("dynamodb")
@@ -123,3 +126,44 @@ def student_is_enrolled_to_course(student_id: str, course_id: str) -> bool:
         }
     )
     return response.get("Item") is not None
+
+def create_course(
+        course_id: str,
+        title: str,
+        description: str,
+        domain: str,
+        difficulty: str,
+        cms_source: str,
+        created_by: str,
+        now: str,
+) -> None:
+    # Generate course_id
+
+    try:
+        table.put_item(
+            Item={
+                "PK": f"COURSE#{course_id}",
+                "SK": "METADATA",
+                "entity_type": "COURSE",
+                "title": title,
+                "description": description,
+                "domain": domain,
+                "difficulty": difficulty,
+                "cms_source": cms_source,
+                "status": "draft",
+                "module_order": [],
+                "created_by": created_by,
+                "created_at": now,
+                "updated_at": now,
+            }
+        )
+    except ClientError as e:
+        error_code = e.response["Error"]["Code"]
+        logger.error("DynamoDB put_item failed" , extra={
+            "error_code": error_code,
+            "course_id": course_id,
+        })
+        raise e
+
+
+

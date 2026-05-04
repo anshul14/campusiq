@@ -14,6 +14,8 @@ These routes handle CRUD course operations.
 """
 
 import logging
+from datetime import datetime, timezone
+from uuid import uuid4
 
 from fastapi import APIRouter, Request, HTTPException
 
@@ -24,7 +26,7 @@ from src.application.schemas import CourseResponse, CourseListResponse, UpdateCo
     GenerateQuizRequest, SaveQuizResponse, SaveQuizRequest, QuizAttemptResponse, SubmitQuizResponse, SubmitQuizRequest, \
     CourseQuizResultsResponse, CourseGapsResponse, DashboardResponse, AtRiskResponse, IngestionStatusResponse, \
     ContentPresignResponse, ContentPresignRequest, ContentCompleteResponse, ContentCompleteRequest, \
-    SaveTextContentResponse, SaveTextContentRequest
+    SaveTextContentResponse, SaveTextContentRequest, CourseStatusEnum
 from src.application.schemas import CourseSummary
 from src.application.services import dynamodb as db
 
@@ -49,10 +51,12 @@ async def get_courses(
     role = authorizer_context["role"]
 
     if role == "ADMIN":
-        result = db.list_all_courses(domain=domain, status=status, cursor=cursor, page_size=page_size)
+        result = db.list_all_courses(
+            domain=domain, status=status, cursor=cursor, page_size=page_size)
     else:
         # TODO: Phase 2 - Implement student and teacher filtered views
-        result = db.list_all_courses(domain=domain, status=status, cursor=cursor, page_size=page_size)
+        result = db.list_all_courses(
+            domain=domain, status=status, cursor=cursor, page_size=page_size)
 
     return CourseListResponse(
         courses=[CourseSummary(**item) for item in result["items"]],
@@ -75,12 +79,14 @@ async def get_course(
     elif role == "TEACHER":
         # verify teacher assignment to course first
         if not db.teacher_is_assigned_to_course(teacher_id=user_id, course_id=course_id):
-            raise HTTPException(status_code=403, detail="Teacher not assigned to course")
+            raise HTTPException(
+                status_code=403, detail="Teacher not assigned to course")
         result = db.get_course_by_id(course_id=course_id)
     elif role == "STUDENT":
         # verify student enrolment to course first
         if not db.student_is_enrolled_to_course(student_id=user_id, course_id=course_id):
-            raise HTTPException(status_code=403, detail="Student not enrolled to course")
+            raise HTTPException(
+                status_code=403, detail="Student not enrolled to course")
         result = db.get_course_by_id(course_id=course_id)
     if result is None:
         raise HTTPException(status_code=404,
@@ -98,12 +104,36 @@ async def update_course(
     pass
 
 
-@router.post("/", response_model=CreateCourseResponse)
+@router.post("/", response_model=CreateCourseResponse, status_code=201)
 async def create_course(
         request: Request,
         body: CreateCourseRequest,
 ) -> CreateCourseResponse:
-    pass
+    authorizer_context = request.state.authorizer
+    created_by = authorizer_context["userId"]
+    course_id = str(uuid4())
+    now = datetime.now(timezone.utc).isoformat()
+    try:
+        db.create_course(
+            course_id=course_id,
+            title=body.title,
+            description=body.description,
+            domain=body.domain,
+            difficulty=body.difficulty,
+            cms_source=body.cms_source,
+            created_by=created_by,
+            now=now,
+        )
+    except Exception as e:
+        logger.error("Failed to create course", extra={
+            "course_id": course_id,
+            "error": str(e),
+        })
+        raise HTTPException(status_code=500,
+                            detail={"code": "COURSE_CREATE_FAILED",
+                                    "message": "Failed to create course"})
+
+    return CreateCourseResponse(course_id=course_id, title=body.title, status=CourseStatusEnum.DRAFT)
 
 
 @router.delete("/{course_id}", status_code=204)
