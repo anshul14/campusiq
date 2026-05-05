@@ -1,6 +1,0 @@
-{
-  "python.defaultInterpreterPath": "/Users/ansh/Documents/Personal/Case-Preparation/Article/CampusIQ/Code/campusiq/.venv/bin/python",
-  "python.analysis.autoSearchPaths": true,
-  "python.analysis.useLibraryCodeForTypes": true,
-  "python.analysis.extraPaths": ["."]
-}
