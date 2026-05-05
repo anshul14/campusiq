@@ -206,7 +206,7 @@ def update_course(
     }
 
     if status is not None:
-        kwargs["ExpressionAttributeName"] = {"#s": "status"}
+        kwargs["ExpressionAttributeNames"] = {"#s": "status"}
     try:
         table.update_item(
             **kwargs
@@ -214,6 +214,23 @@ def update_course(
     except ClientError as e:
         error_code = e.response["Error"]["Code"]
         logger.error("DynamoDB update_course failed", extra={
+            "error_code": error_code,
+            "course_id": course_id,
+        })
+        raise e
+
+
+def archive_course(course_id: str, now: str) -> None:
+    try:
+        table.update_item(
+            Key={"PK": f"COURSE#{course_id}", "SK": "METADATA"},
+            UpdateExpression="SET #s = :s, deleted_at = :d",
+            ExpressionAttributeValues={":s": "archived", ":d": now},
+            ExpressionAttributeNames={"#s": "status"},
+        )
+    except ClientError as e:
+        error_code = e.response["Error"]["Code"]
+        logger.error("DynamoDB archive_course failed", extra={
             "error_code": error_code,
             "course_id": course_id,
         })

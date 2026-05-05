@@ -141,6 +141,7 @@ async def update_course(
         updated_at=now,
     )
 
+
 @router.post("/", response_model=CreateCourseResponse, status_code=201)
 async def create_course(
         request: Request,
@@ -150,6 +151,14 @@ async def create_course(
     created_by = authorizer_context["userId"]
     course_id = str(uuid4())
     now = datetime.now(timezone.utc).isoformat()
+    role = authorizer_context["role"]
+    user_id = authorizer_context["userId"]
+    if role == "STUDENT":
+        raise HTTPException(
+            status_code=403,
+            detail={"code": "FORBIDDEN",
+                    "message": "Students cannot create courses"}
+        )
     try:
         db.create_course(
             course_id=course_id,
@@ -178,7 +187,33 @@ async def delete_course(
         course_id: str,
         request: Request,
 ) -> None:
-    pass
+    authorizer_context = request.state.authorizer
+    now = datetime.now(timezone.utc).isoformat()
+    result = None
+    role = authorizer_context["role"]
+    user_id = authorizer_context["userId"]
+    if role == "ADMIN":
+        # fetch course directly
+        result = db.get_course_by_id(course_id=course_id)
+    elif role == "TEACHER":
+        # verify teacher assignment to course first
+        if not db.teacher_is_assigned_to_course(teacher_id=user_id, course_id=course_id):
+            raise HTTPException(
+                status_code=403, detail="Teacher not assigned to course")
+        result = db.get_course_by_id(course_id=course_id)
+    if result is None:
+        raise HTTPException(status_code=404,
+                            detail={"code": "COURSE_NOT_FOUND", "message": f"Course {course_id} not found"})
+    try:
+        db.archive_course(course_id=course_id, now=now)
+    except Exception as e:
+        logger.error("Failed to archive course", extra={
+            "course_id": course_id,
+            "error": str(e),
+        })
+        raise HTTPException(status_code=500,
+                            detail={"code": "COURSE_ARCHIVE_FAILED",
+                                    "message": "Failed to archive course"})
 
 
 @router.get("/{course_id}/modules", response_model=ModuleListResponse)
