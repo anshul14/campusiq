@@ -101,8 +101,45 @@ async def update_course(
         body: UpdateCourseRequest,
 
 ) -> UpdateCourseResponse:
-    pass
+    authorizer_context = request.state.authorizer
+    now = datetime.now(timezone.utc).isoformat()
+    result = None
+    role = authorizer_context["role"]
+    user_id = authorizer_context["userId"]
+    if role == "ADMIN":
+        # fetch course directly
+        result = db.get_course_by_id(course_id=course_id)
+    elif role == "TEACHER":
+        # verify teacher assignment to course first
+        if not db.teacher_is_assigned_to_course(teacher_id=user_id, course_id=course_id):
+            raise HTTPException(
+                status_code=403, detail="Teacher not assigned to course")
+        result = db.get_course_by_id(course_id=course_id)
+    if result is None:
+        raise HTTPException(status_code=404,
+                            detail={"code": "COURSE_NOT_FOUND", "message": f"Course {course_id} not found"})
+    try:
+        db.update_course(
+            course_id=course_id,
+            title=body.title,
+            description=body.description,
+            difficulty=body.difficulty,
+            status=body.status,
+            now=now
 
+        )
+    except Exception as e:
+        logger.error("Failed to update course", extra={
+            "course_id": course_id,
+            "error": str(e),
+        })
+        raise HTTPException(status_code=500,
+                            detail={"code": "COURSE_UPDATE_FAILED",
+                                    "message": "Failed to update course"})
+    return UpdateCourseResponse(
+        course_id=course_id,
+        updated_at=now,
+    )
 
 @router.post("/", response_model=CreateCourseResponse, status_code=201)
 async def create_course(

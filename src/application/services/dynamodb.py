@@ -101,7 +101,8 @@ def list_all_courses(
 
 
 def get_course_by_id(course_id: str) -> dict | None:
-    response = table.get_item(Key={"PK": f"COURSE#{course_id}", "SK": "METADATA"})
+    response = table.get_item(
+        Key={"PK": f"COURSE#{course_id}", "SK": "METADATA"})
     item = response.get("Item")  # None if not found
     if item is None:
         return None
@@ -127,6 +128,7 @@ def student_is_enrolled_to_course(student_id: str, course_id: str) -> bool:
     )
     return response.get("Item") is not None
 
+
 def create_course(
         course_id: str,
         title: str,
@@ -137,7 +139,6 @@ def create_course(
         created_by: str,
         now: str,
 ) -> None:
-    # Generate course_id
 
     try:
         table.put_item(
@@ -159,11 +160,61 @@ def create_course(
         )
     except ClientError as e:
         error_code = e.response["Error"]["Code"]
-        logger.error("DynamoDB put_item failed" , extra={
+        logger.error("DynamoDB put_item failed", extra={
             "error_code": error_code,
             "course_id": course_id,
         })
         raise e
 
 
+def update_course(
+    course_id: str,
+    title: str = None,
+    description: str = None,
+    difficulty: str = None,
+    status: str = None,
+    now: str = None,
+) -> None:
+    # Build update expression dynamically
+    update_parts = []
+    values = {}
 
+    if title is not None:
+        update_parts.append("title = :t")
+        values[":t"] = title
+
+    if description is not None:
+        update_parts.append("description = :d")
+        values[":d"] = description
+
+    if difficulty is not None:
+        update_parts.append("difficulty = :diff")
+        values[":diff"] = difficulty
+
+    if status is not None:
+        update_parts.append("#s = :s")
+        values[":s"] = status
+
+    # Always update the time
+    update_parts.append("updated_at = :u")
+    values[":u"] = now
+
+    kwargs = {
+        "Key": {"PK": f"COURSE#{course_id}", "SK": "METADATA"},
+        "UpdateExpression": "SET " + ", ".join(update_parts),
+        "ExpressionAttributeValues": values,
+    }
+
+    if status is not None:
+        kwargs["ExpressionAttributeName"] = {"#s": "status"}
+    try:
+        table.update_item(
+            **kwargs
+        )
+    except ClientError as e:
+        error_code = e.response["Error"]["Code"]
+        logger.error("DynamoDB update_course failed", extra={
+            "error_code": error_code,
+            "course_id": course_id,
+        })
+        raise e
