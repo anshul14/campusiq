@@ -26,7 +26,7 @@ from src.application.schemas import CourseResponse, CourseListResponse, UpdateCo
     GenerateQuizRequest, SaveQuizResponse, SaveQuizRequest, QuizAttemptResponse, SubmitQuizResponse, SubmitQuizRequest, \
     CourseQuizResultsResponse, CourseGapsResponse, DashboardResponse, AtRiskResponse, IngestionStatusResponse, \
     ContentPresignResponse, ContentPresignRequest, ContentCompleteResponse, ContentCompleteRequest, \
-    SaveTextContentResponse, SaveTextContentRequest, CourseStatusEnum
+    SaveTextContentResponse, SaveTextContentRequest, CourseStatusEnum, ModuleSummary
 from src.application.schemas import CourseSummary
 from src.application.services import dynamodb as db
 
@@ -36,6 +36,33 @@ router = APIRouter(
     prefix="/courses",
     tags=["courses"]
 )
+
+
+def _verify_course_access(
+        role: str,
+        user_id: str,
+        course_id: str
+) -> dict:
+    """Verify user can access this course. Returns course dict or raises HTTPException."""
+    if role == "ADMIN":
+        course = db.get_course_by_id(course_id)
+    elif role == "TEACHER":
+        if not db.teacher_is_assigned_to_course(user_id, course_id):
+            raise HTTPException(status_code=403, detail="Teacher not assigned to course")
+        course = db.get_course_by_id(course_id)
+    elif role == "STUDENT":
+        if not db.student_is_enrolled_to_course(user_id, course_id):
+            raise HTTPException(status_code=403, detail="Student not enrolled to course")
+        course = db.get_course_by_id(course_id)
+    else:
+        raise HTTPException(status_code=403, detail="Unknown role")
+
+    if course is None:
+        raise HTTPException(
+            status_code=404,
+            detail={"code": "COURSE_NOT_FOUND", "message": f"Course {course_id} not found"}
+        )
+    return course
 
 
 @router.get("/", response_model=CourseListResponse)
@@ -72,26 +99,9 @@ async def get_course(
     authorizer_context = request.state.authorizer
     role = authorizer_context["role"]
     user_id = authorizer_context["userId"]
-    result = None
-    if role == "ADMIN":
-        # fetch course directly
-        result = db.get_course_by_id(course_id=course_id)
-    elif role == "TEACHER":
-        # verify teacher assignment to course first
-        if not db.teacher_is_assigned_to_course(teacher_id=user_id, course_id=course_id):
-            raise HTTPException(
-                status_code=403, detail="Teacher not assigned to course")
-        result = db.get_course_by_id(course_id=course_id)
-    elif role == "STUDENT":
-        # verify student enrolment to course first
-        if not db.student_is_enrolled_to_course(student_id=user_id, course_id=course_id):
-            raise HTTPException(
-                status_code=403, detail="Student not enrolled to course")
-        result = db.get_course_by_id(course_id=course_id)
-    if result is None:
-        raise HTTPException(status_code=404,
-                            detail={"code": "COURSE_NOT_FOUND", "message": f"Course {course_id} not found"})
-    return CourseResponse(**result)
+
+    course = _verify_course_access(role=role, user_id=user_id, course_id=course_id)
+    return CourseResponse(**course)
 
 
 @router.patch("/{course_id}", response_model=UpdateCourseResponse)
@@ -103,21 +113,11 @@ async def update_course(
 ) -> UpdateCourseResponse:
     authorizer_context = request.state.authorizer
     now = datetime.now(timezone.utc).isoformat()
-    result = None
+
     role = authorizer_context["role"]
     user_id = authorizer_context["userId"]
-    if role == "ADMIN":
-        # fetch course directly
-        result = db.get_course_by_id(course_id=course_id)
-    elif role == "TEACHER":
-        # verify teacher assignment to course first
-        if not db.teacher_is_assigned_to_course(teacher_id=user_id, course_id=course_id):
-            raise HTTPException(
-                status_code=403, detail="Teacher not assigned to course")
-        result = db.get_course_by_id(course_id=course_id)
-    if result is None:
-        raise HTTPException(status_code=404,
-                            detail={"code": "COURSE_NOT_FOUND", "message": f"Course {course_id} not found"})
+
+    course = _verify_course_access(role=role, user_id=user_id, course_id=course_id)
     try:
         db.update_course(
             course_id=course_id,
@@ -189,21 +189,12 @@ async def delete_course(
 ) -> None:
     authorizer_context = request.state.authorizer
     now = datetime.now(timezone.utc).isoformat()
-    result = None
+
     role = authorizer_context["role"]
     user_id = authorizer_context["userId"]
-    if role == "ADMIN":
-        # fetch course directly
-        result = db.get_course_by_id(course_id=course_id)
-    elif role == "TEACHER":
-        # verify teacher assignment to course first
-        if not db.teacher_is_assigned_to_course(teacher_id=user_id, course_id=course_id):
-            raise HTTPException(
-                status_code=403, detail="Teacher not assigned to course")
-        result = db.get_course_by_id(course_id=course_id)
-    if result is None:
-        raise HTTPException(status_code=404,
-                            detail={"code": "COURSE_NOT_FOUND", "message": f"Course {course_id} not found"})
+
+    course = _verify_course_access(role=role, user_id=user_id, course_id=course_id)
+
     try:
         db.archive_course(course_id=course_id, now=now)
     except Exception as e:
@@ -221,7 +212,20 @@ async def get_modules(
         request: Request,
         course_id: str,
 ) -> ModuleListResponse:
-    pass
+    authorizer_context = request.state.authorizer
+    role = authorizer_context["role"]
+    user_id = authorizer_context["userId"]
+    result = None
+
+    # Step 1 - First check if the user is allowed to view/assigned/enrolled to the course 
+    course = _verify_course_access(role=role, user_id=user_id, course_id=course_id)
+    # Step 2 - list modules of the course
+    result = db.list_all_modules_of_course(course_id=course_id)
+
+    return ModuleListResponse(
+        modules=[ModuleSummary(**item) for item in result["items"]],
+        next_cursor=result["next_cursor"]
+    )
 
 
 @router.get("/{course_id}/modules/{module_id}", response_model=ModuleResponse)

@@ -67,6 +67,18 @@ def _map_to_course_response(item: dict) -> dict:
     }
 
 
+def _map_to_module_summary(item: dict) -> dict:
+    return {
+        "module_id": item["SK"].replace("MODULE#", ""),
+        "title": item.get("title", ""),
+        "content_type": item.get("content_type", ""),
+        "status": item.get("status", ""),
+        "estimated_minutes": item.get("estimated_minutes", ""),
+        "prerequisites": item.get("prerequisites", []),
+        "quiz_id": item.get("quiz_id", "")
+    }
+
+
 def list_all_courses(
         domain: str = None,
         status: str = None,
@@ -235,3 +247,25 @@ def archive_course(course_id: str, now: str) -> None:
             "course_id": course_id,
         })
         raise e
+
+
+def list_all_modules_of_course(
+        course_id: str,
+        cursor: str = None,
+        page_size: int = 20,
+) -> dict:
+    kwargs = {
+        "KeyConditionExpression": Key("PK").eq(f"COURSE#{course_id}") 
+                                  & Key("SK").begins_with("MODULE#"),
+        "Limit": page_size,
+    }
+    if cursor:
+        kwargs["ExclusiveStartKey"] = decode_cursor(cursor)
+
+    response = table.query(
+        **kwargs
+    )
+    return {
+        "items": [_map_to_module_summary(item) for item in response["Items"]],
+        "next_cursor": encode_cursor(response["LastEvaluatedKey"]) if "LastEvaluatedKey" in response else None,
+    }
