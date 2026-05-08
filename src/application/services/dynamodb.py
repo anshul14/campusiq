@@ -13,12 +13,10 @@ import base64
 import json
 import os
 
-
 import boto3
 from aws_lambda_powertools import Logger
 from boto3.dynamodb.conditions import Key, Attr
 from botocore.exceptions import ClientError
-
 
 logger = Logger(service="dynamodb-service")
 dynamodb = boto3.resource("dynamodb")
@@ -76,6 +74,23 @@ def _map_to_module_summary(item: dict) -> dict:
         "estimated_minutes": item.get("estimated_minutes", ""),
         "prerequisites": item.get("prerequisites", []),
         "quiz_id": item.get("quiz_id", "")
+    }
+
+
+def _map_to_module_response(item: dict) -> dict:
+    return {
+        "module_id": item["SK"].replace("MODULE#", ""),
+        "title": item.get("title", ""),
+        "content_type": item.get("content_type", ""),
+        "status": item.get("status", ""),
+        "content_url": item.get("content_url", ""),
+        "video_url": item.get("video_url", ""),
+        "transcript_url": item.get("transcript_url", ""),
+        "quiz_id": item.get("quiz_id", ""),
+        "prerequisites": item.get("prerequisites", []),
+        "estimated_minutes": item.get("estimated_minutes", ""),
+        "ingestion_status": item.get("ingestion_status", ""),
+
     }
 
 
@@ -151,7 +166,6 @@ def create_course(
         created_by: str,
         now: str,
 ) -> None:
-
     try:
         table.put_item(
             Item={
@@ -180,12 +194,12 @@ def create_course(
 
 
 def update_course(
-    course_id: str,
-    title: str = None,
-    description: str = None,
-    difficulty: str = None,
-    status: str = None,
-    now: str = None,
+        course_id: str,
+        title: str = None,
+        description: str = None,
+        difficulty: str = None,
+        status: str = None,
+        now: str = None,
 ) -> None:
     # Build update expression dynamically
     update_parts = []
@@ -255,7 +269,7 @@ def list_all_modules_of_course(
         page_size: int = 20,
 ) -> dict:
     kwargs = {
-        "KeyConditionExpression": Key("PK").eq(f"COURSE#{course_id}") 
+        "KeyConditionExpression": Key("PK").eq(f"COURSE#{course_id}")
                                   & Key("SK").begins_with("MODULE#"),
         "Limit": page_size,
     }
@@ -269,3 +283,169 @@ def list_all_modules_of_course(
         "items": [_map_to_module_summary(item) for item in response["Items"]],
         "next_cursor": encode_cursor(response["LastEvaluatedKey"]) if "LastEvaluatedKey" in response else None,
     }
+
+
+def get_module_by_id(
+        course_id: str,
+        module_id: str,
+
+) -> dict | None:
+    response = table.get_item(
+        Key={
+            "PK": f"COURSE#{course_id}",
+            "SK": f"MODULE#{module_id}",
+        }
+    )
+    item = response.get("Item")  # None if not found
+    if item is None:
+        return None
+    return _map_to_module_response(item)
+
+
+def update_module(
+        course_id: str,
+        module_id: str,
+        title: str = None,
+        estimated_minutes: int = None,
+        prerequisites: str = None,
+        status: str = None,
+        now: str = None,
+) -> None:
+    update_parts = []
+    values = {}
+    if title is not None:
+        update_parts.append("title = :t")
+        values[":t"] = title
+
+    if estimated_minutes is not None:
+        update_parts.append("estimated_minutes = :e")
+        values[":e"] = estimated_minutes
+
+    if prerequisites is not None:
+        update_parts.append("prerequisites = :p")
+        values[":p"] = prerequisites
+
+    if status is not None:
+        update_parts.append("#s = :s")
+        values[":s"] = status
+
+    # Always update the time
+    update_parts.append("updated_at = :u")
+    values[":u"] = now
+
+    kwargs = {
+        "Key": {"PK": f"COURSE#{course_id}", "SK": f"MODULE#{module_id}"},
+        "UpdateExpression": "SET " + ", ".join(update_parts),
+        "ExpressionAttributeValues": values,
+    }
+
+    if status is not None:
+        kwargs["ExpressionAttributeNames"] = {"#s": "status"}
+    try:
+        table.update_item(
+            **kwargs
+        )
+    except ClientError as e:
+        error_code = e.response["Error"]["Code"]
+        logger.error("DynamoDB update_module failed", extra={
+            "error_code": error_code,
+            "course_id": course_id,
+            "module_id": module_id,
+        })
+        raise e
+
+
+def create_module(course_id: str,
+                  module_id: str,
+                  title: str,
+                  content_type: str,
+                  estimated_minutes: str,
+                  prerequisites: [],
+                  created_by: str,
+                  now
+                  ) -> None:
+    try:
+        table.put_item(
+            Item={
+                "PK": f"COURSE#{course_id}",
+                "SK": f"MODULE#{module_id}",
+                "title": title,
+                "content_type": content_type,
+                "estimated_minutes": estimated_minutes,
+                "prerequisites": prerequisites,
+                "status": "draft",
+                "ingestion_status": "pending",
+                "created_at": now,
+                "updated_at": now,
+                "created_by": created_by,
+            }
+        )
+    except ClientError as e:
+        error_code = e.response["Error"]["Code"]
+        logger.error("DynamoDB create_module failed", extra={
+            "error_code": error_code,
+            "course_id": course_id,
+        })
+        raise e
+
+def append_module_to_course_order(course_id: str, module_id: str) -> None:
+    try:
+        table.update_item(
+            Key={"PK": f"COURSE#{course_id}", "SK": "METADATA"},
+            UpdateExpression="SET module_order = list_append(module_order, :m)",
+            ExpressionAttributeValues={":m": [module_id]},  # must be a list
+        )
+    except ClientError as e:
+        error_code = e.response["Error"]["Code"]
+        logger.error("DynamoDB append_module_to_course_order failed", extra={
+            "error_code": error_code,
+            "course_id": course_id,
+            "module_id": module_id,
+        })
+        raise e
+
+def archive_module(course_id: str, module_id: str, now: str) -> None:
+    try:
+        table.update_item(
+            Key={"PK": f"COURSE#{course_id}", "SK": f"MODULE#{module_id}"},
+            UpdateExpression="SET #s = :s, deleted_at = :d",
+            ExpressionAttributeValues={":s": "archived", ":d": now},
+            ExpressionAttributeNames={"#s": "status"},
+        )
+    except ClientError as e:
+        error_code = e.response["Error"]["Code"]
+        logger.error("DynamoDB archive_module failed", extra={
+            "error_code": error_code,
+            "module_id": module_id,
+        })
+        raise e
+
+
+def remove_module_from_course_order(course_id: str, module_id: str) -> None:
+    # Step 1 — read current module_order
+    response = table.get_item(
+        Key={"PK": f"COURSE#{course_id}", "SK": "METADATA"},
+    )
+    item = response.get("Item")
+    if item is None:
+        return
+
+    # Step 2 — remove module_id from list in Python
+    module_order = item.get("module_order", [])
+    updated_order = [m for m in module_order if m != module_id]
+
+    # Step 3 — write updated list back
+    try:
+        table.update_item(
+            Key={"PK": f"COURSE#{course_id}", "SK": "METADATA"},
+            UpdateExpression="SET module_order = :o",
+            ExpressionAttributeValues={":o": updated_order},
+        )
+    except ClientError as e:
+        error_code = e.response["Error"]["Code"]
+        logger.error("DynamoDB remove_module_from_course_order failed", extra={
+            "error_code": error_code,
+            "course_id": course_id,
+            "module_id": module_id,
+        })
+        raise e

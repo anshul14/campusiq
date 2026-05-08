@@ -229,12 +229,25 @@ async def get_modules(
 
 
 @router.get("/{course_id}/modules/{module_id}", response_model=ModuleResponse)
-async def get_module(
+async def get_module_by_id(
         request: Request,
         course_id: str,
         module_id: str,
 ) -> ModuleResponse:
-    pass
+    authorizer_context = request.state.authorizer
+    role = authorizer_context["role"]
+    user_id = authorizer_context["userId"]
+
+    # Step 1 - first check if the user has access to the course
+    _verify_course_access(role=role, user_id=user_id, course_id=course_id)
+    # Step 2 - get the module
+    module = db.get_module_by_id(course_id=course_id, module_id=module_id)
+    if module is None:
+        raise HTTPException(
+            status_code=404,
+            detail={"code": "MODULE_NOT_FOUND", "message": f"Module {module_id} not found"}
+        )
+    return ModuleResponse(**module)
 
 
 @router.post("/{course_id}/modules", response_model=CreateModuleResponse)
@@ -243,7 +256,60 @@ async def create_module(
         course_id: str,
         body: CreateModuleRequest,
 ) -> CreateModuleResponse:
-    pass
+    authorizer_context = request.state.authorizer
+    role = authorizer_context["role"]
+    user_id = authorizer_context["userId"]
+    module_id = str(uuid4())
+    now = datetime.now(timezone.utc).isoformat()
+    if role == "STUDENT":
+        raise HTTPException(
+            status_code=403,
+            detail={"code": "FORBIDDEN",
+                    "message": "Students cannot create modules"}
+        )
+    # Step 1 - create module for the course
+    try:
+        db.create_module(
+            course_id=course_id,
+            module_id=module_id,
+            title=body.title,
+            content_type=body.content_type,
+            estimated_minutes=body.estimated_minutes,
+            prerequisites=body.prerequisites,
+            created_by=user_id,
+            now=now,
+        )
+    except Exception as e:
+        logger.error(f"Failed to create module for course {course_id}", extra={
+            "course_id": course_id,
+            "error": str(e),
+        })
+        raise HTTPException(status_code=500,
+                            detail={"code": "MODULE_CREATION_FAILED",
+                                    "message": "Failed to create module"})
+
+    # Step 2 - append module_id to course's module order
+    try:
+        db.append_module_to_course_order(
+            course_id=course_id,
+            module_id=module_id,
+        )
+    except Exception as e:
+        logger.error("Failed to update module order", extra={
+            "course_id": course_id,
+            "module_id": module_id,
+            "error": str(e),
+        })
+        raise HTTPException(status_code=500,
+                            detail={"code": "MODULE_ORDER_UPDATE_FAILED",
+                                    "message": "Module created but failed to update course order"})
+
+    return CreateModuleResponse(
+        module_id=module_id,
+        title=body.title,
+        status="draft",
+        ingestion_status="pending",
+    )
 
 
 @router.patch("/{course_id}/modules/{module_id}", response_model=UpdateModuleResponse)
@@ -253,8 +319,38 @@ async def update_module(
         request: Request,
         body: UpdateModuleRequest,
 ) -> UpdateModuleResponse:
-    pass
+    authorizer_context = request.state.authorizer
+    now = datetime.now(timezone.utc).isoformat()
+    role = authorizer_context["role"]
+    user_id = authorizer_context["userId"]
 
+    # Step 1 - first verify access to the course
+    _verify_course_access(role=role, user_id=user_id, course_id=course_id)
+
+    # Step 2 - update module
+    try:
+        db.update_module(
+            course_id=course_id,
+            module_id=module_id,
+            title=body.title,
+            estimated_minutes=body.estimated_minutes,
+            prerequisites=body.prerequisites,
+            status=body.status,
+            now=now
+        )
+    except Exception as e:
+        logger.error("Failed to update module", extra={
+            "course_id": course_id,
+            "module_id": module_id,
+            "error": str(e),
+        })
+        raise HTTPException(status_code=500,
+                            detail={"code": "MODULE_UPDATE_FAILED",
+                                    "message": "Failed to update module"})
+    return UpdateModuleResponse(
+        module_id=module_id,
+        updated_at=now,
+    )
 
 @router.delete("/{course_id}/modules/{module_id}", status_code=204)
 async def delete_module(
@@ -262,8 +358,37 @@ async def delete_module(
         module_id: str,
         request: Request,
 ) -> None:
-    pass
+    authorizer_context = request.state.authorizer
+    role = authorizer_context["role"]
+    user_id = authorizer_context["userId"]
+    now = datetime.now(timezone.utc).isoformat()
 
+    _verify_course_access(role=role, user_id=user_id, course_id=course_id)
+    try:
+        db.archive_module(course_id=course_id, module_id=module_id, now=now)
+
+    except Exception as e:
+        logger.error("Failed to archive module", extra={
+            "module_id": module_id,
+            "error": str(e),
+        })
+        raise HTTPException(status_code=500,
+                            detail={"code": "MODULE_ARCHIVE_FAILED",
+                                    "message": "Failed to archive module"})
+    # Step 2 — remove from course module_order
+    try:
+        db.remove_module_from_course_order(
+            course_id=course_id,
+            module_id=module_id,
+        )
+    except Exception as e:
+        logger.error("Failed to update module order after archive", extra={
+            "course_id": course_id,
+            "module_id": module_id,
+            "error": str(e),
+        })
+        # Non-fatal — module is archived, order update failed
+        # TODO: add compensation logic or DynamoDB transaction in Phase 3
 
 @router.get("/{course_id}/students", response_model=CourseStudentListResponse)
 async def list_course_students(
