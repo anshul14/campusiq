@@ -388,6 +388,7 @@ def create_module(course_id: str,
         })
         raise e
 
+
 def append_module_to_course_order(course_id: str, module_id: str) -> None:
     try:
         table.update_item(
@@ -403,6 +404,7 @@ def append_module_to_course_order(course_id: str, module_id: str) -> None:
             "module_id": module_id,
         })
         raise e
+
 
 def archive_module(course_id: str, module_id: str, now: str) -> None:
     try:
@@ -447,5 +449,46 @@ def remove_module_from_course_order(course_id: str, module_id: str) -> None:
             "error_code": error_code,
             "course_id": course_id,
             "module_id": module_id,
+        })
+        raise e
+
+
+def enrol_students(
+        course_id: str,
+        student_ids: list[str],
+        now: str,
+) -> None:
+    # Build enrolment items
+    items = []
+    for student_id in student_ids:
+        items.append({
+            "PutRequest": {
+                "Item": {
+                    "PK": f"STUDENT#{student_id}",
+                    "SK": f"ENROL#{course_id}",
+                    "course_id": course_id,
+                    "student_id": student_id,
+                    "enrolled_at": now,
+                    "status": "active",
+                }
+            }
+        })
+
+    # Split into chunks of 25 — DynamoDB batch_write_item limit
+    table_name = os.getenv("DYNAMODB_TABLE_NAME", "")
+    chunks = [items[i:i + 25] for i in range(0, len(items), 25)]
+
+    try:
+        for chunk in chunks:
+            dynamodb.batch_write_item(
+                RequestItems={
+                    table_name: chunk
+                }
+            )
+    except ClientError as e:
+        error_code = e.response["Error"]["Code"]
+        logger.error("DynamoDB batch_write_item failed", extra={
+            "error_code": error_code,
+            "course_id": course_id,
         })
         raise e

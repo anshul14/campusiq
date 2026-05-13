@@ -352,6 +352,7 @@ async def update_module(
         updated_at=now,
     )
 
+
 @router.delete("/{course_id}/modules/{module_id}", status_code=204)
 async def delete_module(
         course_id: str,
@@ -390,6 +391,7 @@ async def delete_module(
         # Non-fatal — module is archived, order update failed
         # TODO: add compensation logic or DynamoDB transaction in Phase 3
 
+
 @router.get("/{course_id}/students", response_model=CourseStudentListResponse)
 async def list_course_students(
         course_id: str,
@@ -406,7 +408,65 @@ async def enrol_students(
         body: EnrolStudentsRequest,
         request: Request,
 ) -> EnrolStudentsResponse:
-    pass
+    authorizer_context = request.state.authorizer
+    role = authorizer_context["role"]
+    user_id = authorizer_context["userId"]
+    now = datetime.now(timezone.utc).isoformat()
+
+    # Verify course exists
+    course = db.get_course_by_id(course_id)
+    if course is None:
+        raise HTTPException(
+            status_code=404,
+            detail={"code": "COURSE_NOT_FOUND", "message": f"Course {course_id} not found"}
+        )
+
+    if role == "ADMIN":
+        # Admin can enrol any student in any course
+        student_ids = body.student_ids
+
+    elif role == "TEACHER":
+        # Teacher can only enrol in their assigned courses
+        if not db.teacher_is_assigned_to_course(user_id, course_id):
+            raise HTTPException(
+                status_code=403,
+                detail={"code": "FORBIDDEN", "message": "Teacher not assigned to this course"}
+            )
+        student_ids = body.student_ids
+
+    elif role == "STUDENT":
+        # Student can only enrol themselves in published courses
+        if course["status"] != "published":
+            raise HTTPException(
+                status_code=403,
+                detail={"code": "COURSE_NOT_PUBLISHED", "message": "Course is not available for enrolment"}
+            )
+        # Students can only enrol themselves — ignore any other IDs in the request
+        student_ids = [user_id]
+
+    else:
+        raise HTTPException(status_code=403, detail="Unknown role")
+
+    try:
+        db.enrol_students(
+            course_id=course_id,
+            student_ids=student_ids,
+            now=now,
+        )
+    except Exception as e:
+        logger.error("Failed to enrol students", extra={
+            "course_id": course_id,
+            "error": str(e),
+        })
+        raise HTTPException(
+            status_code=500,
+            detail={"code": "ENROLMENT_FAILED", "message": "Failed to enrol students"}
+        )
+
+    return EnrolStudentsResponse(
+        enrolled=student_ids,   # list of successfully enrolled student IDs
+        failed=[] # empty for now - Phase 2 add per-item error handling
+    )
 
 
 @router.get("/{course_id}/progress", response_model=CourseProgressResponse)
