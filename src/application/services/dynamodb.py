@@ -492,3 +492,25 @@ def enrol_students(
             "course_id": course_id,
         })
         raise e
+
+
+def _map_to_student_profile(item: dict) -> dict:
+    return {
+        "cognito_sub": item["PK"].replace("STUDENT#", ""),
+        "name": item.get("name", ""),
+        "email": item.get("email", ""),
+        "domain": item.get("domain", ""),
+        "grade": item.get("grade", ""),
+        "enrollment_status": item.get("enrollment_status", ""),
+        "last_active_at": item.get("last_active_at", ""),
+    }
+
+
+def get_student_profile(student_id: str) -> dict | None:
+    response = table.get_item(
+        Key={"PK": f"STUDENT#{student_id}", "SK": "PROFILE"},
+    )
+    profile = response.get("Item") # None if not found
+    if profile is None:
+        return None
+    return _map_to_student_profile(profile)

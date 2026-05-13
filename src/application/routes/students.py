@@ -15,11 +15,12 @@ These routes handle CRUD student operations.
 
 import logging
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, HTTPException
 
 from src.application.schemas import StudentProfileResponse, StudentEnrolmentsResponse, \
     StudentCourseProgressResponse, ModuleProgressDetailResponse, UpdateProgressResponse, UpdateProgressRequest, \
     StudentQuizResultsResponse, StudentGapsResponse, LearningPathResponse
+from src.application.services import dynamodb as db
 
 logger = logging.getLogger(__name__)
 
@@ -100,7 +101,18 @@ async def get_my_gaps(
 
 @router.get("/me", response_model=StudentProfileResponse)
 async def get_my_profile(request: Request) -> StudentProfileResponse:
-    pass
+    authorizer_context = request.state.authorizer
+    user_id = authorizer_context["userId"]
+
+    profile = db.get_student_profile(
+        student_id=user_id,
+    )
+    if profile is None:
+        raise HTTPException(
+            status_code=404,
+            detail={"code": "PROFILE_NOT_FOUND", "message": "Student profile not found"}
+        )
+    return StudentProfileResponse(**profile)
 
 
 @router.get("/{student_id}", response_model=StudentProfileResponse)
