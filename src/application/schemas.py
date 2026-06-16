@@ -540,6 +540,44 @@ class CourseQuizResultsResponse(BaseModel):
     next_cursor: Optional[str] = None
 
 
+# ------------------------------------------------------------------
+# Enrolment schemas  (GET /students/me/courses)
+# ------------------------------------------------------------------
+
+class EnrolmentResponse(BaseModel):
+    course_id: str
+    enrolled_at: str
+    status: str  # active | completed | dropped
+
+
+class EnrolmentListResponse(BaseModel):
+    items: List[EnrolmentResponse]
+    next_cursor: Optional[str] = None
+
+
+# ------------------------------------------------------------------
+# Progress schemas  (PUT .../progress)
+# ------------------------------------------------------------------
+
+class ProgressUpsertRequest(BaseModel):
+    progress_pct: float = Field(
+        ge=0.0,
+        le=1.0,
+        description="Progress as a fraction 0.0–1.0. 1.0 = fully complete.",
+    )
+    status: str = Field(
+        description="Module status: 'in_progress' or 'completed'",
+        pattern="^(in_progress|completed)$",
+    )
+
+
+class ProgressUpsertResponse(BaseModel):
+    course_id: str
+    module_id: str
+    progress_pct: float
+    status: str
+    updated_at: str
+
 # ─────────────────────────────────────────────────────
 # TUTOR SCHEMAS
 # ─────────────────────────────────────────────────────
@@ -552,9 +590,18 @@ class TutorContext(BaseModel):
 
 
 class TutorChatRequest(BaseModel):
-    """POST /api/v1/tutor/chat"""
-    message: str     = Field(..., min_length=1, max_length=2000)
-    context: TutorContext
+    session_id: str = Field(
+        description=(
+            "UUID identifying the conversation session. "
+            "Generate once per conversation; pass the same ID on follow-up turns. "
+            "AgentCore uses this to maintain multi-turn context."
+        )
+    )
+    message: str = Field(
+        min_length=1,
+        max_length=4096,
+        description="The student's question or message to the Tutor Agent.",
+    )
 
 
 class TutorMessage(BaseModel):
@@ -567,7 +614,9 @@ class TutorHistoryResponse(BaseModel):
     """GET /api/v1/tutor/history"""
     messages: list[TutorMessage]
 
-
+class TutorChatResponse(BaseModel):
+    session_id: str
+    response: str
 # ─────────────────────────────────────────────────────
 # GAP & LEARNING PATH SCHEMAS
 # ─────────────────────────────────────────────────────

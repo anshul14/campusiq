@@ -12,6 +12,9 @@ DynamoDB utility methods
 import base64
 import json
 import os
+from datetime import datetime, timezone
+from decimal import Decimal
+from typing import Optional
 
 import boto3
 from aws_lambda_powertools import Logger
@@ -510,7 +513,118 @@ def get_student_profile(student_id: str) -> dict | None:
     response = table.get_item(
         Key={"PK": f"STUDENT#{student_id}", "SK": "PROFILE"},
     )
-    profile = response.get("Item") # None if not found
+    profile = response.get("Item")  # None if not found
     if profile is None:
         return None
     return _map_to_student_profile(profile)
+
+
+# ------------------------------------------------------------------
+# GET /students/me/courses  →  list_student_enrolments
+# ------------------------------------------------------------------
+
+def list_student_enrolments(
+        user_id: str,
+        cursor: Optional[str] = None,
+        page_size: int = 20,
+) -> dict:
+    """
+    Query all ENROL# records for a student.
+
+    KeyConditionExpression:
+        PK = STUDENT#{user_id}   AND   SK begins_with ENROL#
+
+    No FilterExpression needed — every record under ENROL# prefix
+    is an enrolment by definition of the single-table key design.
+
+    Returns:
+        { items: [...], next_cursor: str | None }
+    """
+    kwargs = {
+        "KeyConditionExpression": (
+                Key("PK").eq(f"STUDENT#{user_id}")
+                & Key("SK").begins_with("ENROL#")
+        ),
+        "Limit": page_size,
+        # Most recently enrolled first
+        "ScanIndexForward": False,
+    }
+
+    if cursor:
+        kwargs["ExclusiveStartKey"] = decode_cursor(cursor)
+
+    response = table.query(**kwargs)
+
+    return {
+        "items": response["Items"],
+        "next_cursor": (
+            encode_cursor(response["LastEvaluatedKey"])
+            if "LastEvaluatedKey" in response
+            else None
+        ),
+    }
+
+
+# ------------------------------------------------------------------
+# PUT /students/me/courses/{course_id}/modules/{module_id}/progress
+# →  upsert_module_progress
+# ------------------------------------------------------------------
+
+def upsert_module_progress(
+        user_id: str,
+        course_id: str,
+        module_id: str,
+        progress_pct: float,
+        status: str,
+) -> dict:
+    """
+    Upsert a progress record for a student + course + module combination.
+
+    Key:
+        PK = STUDENT#{user_id}
+        SK = PROGRESS#{course_id}#{module_id}
+
+    Upsert behaviour:
+        - progress_pct, status, updated_at  — always overwritten (SET)
+        - created_at, entity_type           — set ONLY on first write (if_not_exists)
+          This is the atomic upsert pattern — no separate get_item + conditional
+          put_item needed.
+
+    Why Decimal for progress_pct?
+        boto3 DynamoDB does not accept Python float types.
+        Decimal(str(value)) is the correct conversion — str() avoids floating
+        point precision issues (e.g. Decimal(0.1) → Decimal('0.1000000...1')).
+
+    ReturnValues=ALL_NEW:
+        Returns the full updated record in one round trip.
+        Avoids a second get_item call after the update.
+    """
+    now = datetime.now(timezone.utc).isoformat()
+
+    response = table.update_item(
+        Key={
+            "PK": f"STUDENT#{user_id}",
+            "SK": f"PROGRESS#{course_id}#{module_id}",
+        },
+        UpdateExpression=(
+            "SET progress_pct = :pct, "
+            "#s = :s, "
+            "updated_at = :u, "
+            "created_at = if_not_exists(created_at, :u), "
+            "entity_type = if_not_exists(entity_type, :et)"
+        ),
+        ExpressionAttributeNames={
+            # 'status' is a DynamoDB reserved word — must alias
+            "#s": "status",
+        },
+        ExpressionAttributeValues={
+            ":pct": Decimal(str(progress_pct)),  # float → Decimal
+            ":s": status,
+            ":u": now,
+            ":et": "PROGRESS",
+        },
+        ReturnValues="ALL_NEW",
+    )
+
+    # response["Attributes"] contains the full updated item
+    return response["Attributes"]

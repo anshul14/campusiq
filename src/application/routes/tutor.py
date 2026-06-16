@@ -14,11 +14,11 @@ These routes handle tutor chat and history operations.
 """
 
 import logging
-
+import src.application.services.bedrock as bedrock
 from fastapi import APIRouter, Request
 from fastapi.responses import StreamingResponse
 
-from src.application.schemas import TutorHistoryResponse, TutorChatRequest
+from src.application.schemas import TutorHistoryResponse, TutorChatRequest, TutorChatResponse
 
 logger = logging.getLogger(__name__)
 
@@ -47,3 +47,31 @@ async def get_tutor_history(
         limit: int = 20,
 ) -> TutorHistoryResponse:
     pass
+
+
+@router.post("/chat", response_model=TutorChatResponse)
+async def tutor_chat(body: TutorChatRequest, request: Request):
+    """
+    Send a message to the Tutor Agent running in Bedrock AgentCore.
+
+    session_id — maintain across turns for multi-turn conversation context.
+                 Generate a UUID on the client for a new session.
+    message    — the student's question or input.
+
+    The Tutor Agent has access to the student's enrolled course content
+    via its Knowledge Base. AgentCore maintains session state between calls
+    using the session_id — the caller is responsible for generating and
+    persisting a consistent session_id per conversation.
+    """
+    # user_id available for future use — e.g. audit logging, rate limiting
+    user_id = request.state.authorizer["sub"]  # noqa: F841
+
+    response_text = bedrock.invoke_tutor_agent(
+        session_id=body.session_id,
+        user_message=body.message,
+    )
+
+    return TutorChatResponse(
+        session_id=body.session_id,
+        response=response_text,
+    )
