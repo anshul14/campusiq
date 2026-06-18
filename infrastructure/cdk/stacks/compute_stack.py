@@ -85,6 +85,54 @@ class ComputeStack(Stack):
         )
 
         # ------------------------------------------------------------------
+        # Dependencies Layer
+        # Bundles third-party packages at cdk deploy time via Docker.
+        # Docker must be running on the deployer's machine — documented
+        # in README.md prerequisites.
+        #
+        # Packages included:
+        #   fastapi          — HTTP Lambda framework
+        #   mangum           — FastAPI → Lambda adapter
+        #   pydantic         — request/response validation (FastAPI dep)
+        #   aws-lambda-powertools — structured logging, tracing
+        #
+        # boto3 is excluded — pre-installed in the Lambda Python runtime.
+        #
+        # Layer structure requirement:
+        #   python/lib/python3.12/site-packages/{package}/
+        # Docker command pip-installs into that path inside the asset dir.
+        # ------------------------------------------------------------------
+        self.deps_layer = lambda_.LayerVersion(
+            self,
+            "CampusIQDepsLayer",
+            layer_version_name=f"campusiq-{deployment_name}-deps",
+            description="CampusIQ third-party dependencies — fastapi, mangum, pydantic, aws-lambda-powertools",
+            compatible_runtimes=[lambda_.Runtime.PYTHON_3_12],
+            code=lambda_.Code.from_asset(
+                os.path.join(REPO_ROOT, "infrastructure", "cdk", "layer"),
+                bundling=cdk.BundlingOptions(
+                    # Use the official AWS Lambda Python 3.12 build image
+                    # Ensures packages are compiled for the Lambda execution environment
+                    image=lambda_.Runtime.PYTHON_3_12.bundling_image,
+                    command=[
+                        "bash", "-c",
+                        " && ".join([
+                            # Install packages into the correct Layer directory structure
+                            "pip install "
+                            "fastapi==0.115.0 "
+                            "mangum==0.19.0 "
+                            "pydantic==2.7.0 "
+                            "aws-lambda-powertools==3.3.0 "
+                            "--target /asset-output/python/lib/python3.12/site-packages "
+                            "--no-cache-dir "
+                            "--quiet",
+                        ]),
+                    ],
+                ),
+            ),
+        )
+
+        # ------------------------------------------------------------------
         # Build all Lambdas
         # ------------------------------------------------------------------
         self._build_http_lambdas()
@@ -514,6 +562,7 @@ class ComputeStack(Stack):
             memory_size=memory,
             timeout=Duration.seconds(timeout),
             environment={**self.shared_env, **extra_env},
+            layers=[self.deps_layer],
         )
 
     def _event_lambda(
@@ -546,4 +595,5 @@ class ComputeStack(Stack):
             memory_size=memory,
             timeout=Duration.seconds(timeout),
             environment={**self.shared_env, **extra_env},
+            layers=[self.deps_layer],
         )

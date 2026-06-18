@@ -67,7 +67,9 @@ Its pluggable CMS layer allows different institutions to plug in their existing 
 Before setting up the application, make sure you have the following prerequisites installed on your laptop:
 
 - Python (version >=3.9, <4.0)
-- Docker and Docker Compose
+- Docker and Docker Compose (required for Lambda dependency bundling at deploy time)
+- AWS CLI (for configuring credentials before deployment)
+- AWS CDK v2 (`npm install -g aws-cdk`)
 
 ### Installation
 
