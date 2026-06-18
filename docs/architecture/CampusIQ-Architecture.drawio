@@ -1,193 +1,205 @@
 <mxfile host="Electron" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/27.0.9 Chrome/134.0.6998.205 Electron/35.4.0 Safari/537.36" version="27.0.9" pages="6">
   <diagram name="1 - Full System Architecture" id="p1">
-    <mxGraphModel dx="1426" dy="780" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" math="0" shadow="0">
+    <mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" pageWidth="1654" pageHeight="1169">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="title" value="CampusIQ — Full System Architecture" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=20;fontStyle=1;fontColor=#1B3A5C;" parent="1" vertex="1">
+        <!-- Title -->
+        <mxCell id="title" value="CampusIQ — Full System Architecture" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=20;fontStyle=1;fontColor=#1B3A5C;" vertex="1" parent="1">
           <mxGeometry x="427" y="20" width="800" height="40" as="geometry" />
         </mxCell>
-        <mxCell id="L6bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;opacity=30;" parent="1" vertex="1">
-          <mxGeometry x="40" y="80" width="1574" height="100" as="geometry" />
+        <!-- LAYER 6 — PRESENTATION -->
+        <mxCell id="L6bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;opacity=30;" vertex="1" parent="1">
+          <mxGeometry x="40" y="70" width="1574" height="90" as="geometry" />
         </mxCell>
-        <mxCell id="L6label" value="LAYER 6 — PRESENTATION" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=11;fontStyle=1;fontColor=#1B3A5C;" parent="1" vertex="1">
-          <mxGeometry x="50" y="85" width="200" height="20" as="geometry" />
+        <mxCell id="L6label" value="LAYER 6 — PRESENTATION" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=11;fontStyle=1;fontColor=#1B3A5C;" vertex="1" parent="1">
+          <mxGeometry x="50" y="75" width="220" height="20" as="geometry" />
         </mxCell>
-        <mxCell id="nextjs" value="Next.js&#xa;Student Portal" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" parent="1" vertex="1">
-          <mxGeometry x="200" y="105" width="160" height="60" as="geometry" />
+        <mxCell id="nextjs" value="Next.js&#xa;Student Portal" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="200" y="90" width="160" height="55" as="geometry" />
         </mxCell>
-        <mxCell id="quicksight" value="Amazon QuickSight&#xa;Faculty Dashboard" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" parent="1" vertex="1">
-          <mxGeometry x="700" y="105" width="160" height="60" as="geometry" />
+        <mxCell id="quicksight" value="Amazon QuickSight&#xa;Faculty Dashboard" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="700" y="90" width="160" height="55" as="geometry" />
         </mxCell>
-        <mxCell id="adminui" value="Admin Console&#xa;(Plugin Config)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" parent="1" vertex="1">
-          <mxGeometry x="1200" y="105" width="160" height="60" as="geometry" />
+        <mxCell id="adminui" value="Admin Console&#xa;(Plugin Config)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1200" y="90" width="160" height="55" as="geometry" />
         </mxCell>
-        <mxCell id="L5bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;opacity=30;" parent="1" vertex="1">
-          <mxGeometry x="40" y="200" width="1574" height="100" as="geometry" />
+        <!-- LAYER 5 — API GATEWAY -->
+        <mxCell id="L5bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;opacity=30;" vertex="1" parent="1">
+          <mxGeometry x="40" y="180" width="1574" height="90" as="geometry" />
         </mxCell>
-        <mxCell id="L5label" value="LAYER 5 — API GATEWAY &amp; AUTH" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=11;fontStyle=1;fontColor=#1B3A5C;" parent="1" vertex="1">
-          <mxGeometry x="50" y="205" width="220" height="20" as="geometry" />
+        <mxCell id="L5label" value="LAYER 5 — API GATEWAY &amp; AUTH" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=11;fontStyle=1;fontColor=#1B3A5C;" vertex="1" parent="1">
+          <mxGeometry x="50" y="185" width="240" height="20" as="geometry" />
         </mxCell>
-        <mxCell id="apigw" value="Amazon API Gateway&#xa;REST + WebSocket" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" parent="1" vertex="1">
-          <mxGeometry x="200" y="220" width="160" height="60" as="geometry" />
+        <mxCell id="apigw" value="Amazon API Gateway&#xa;REST + WebSocket" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="200" y="200" width="160" height="55" as="geometry" />
         </mxCell>
-        <mxCell id="cognito" value="Amazon Cognito&#xa;+ IdP Federation" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" parent="1" vertex="1">
-          <mxGeometry x="500" y="220" width="160" height="60" as="geometry" />
+        <mxCell id="cognito" value="Amazon Cognito&#xa;+ IdP Federation" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="500" y="200" width="160" height="55" as="geometry" />
         </mxCell>
-        <mxCell id="authorizer" value="Lambda Authorizer&#xa;JWT + RBAC" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" parent="1" vertex="1">
-          <mxGeometry x="700" y="220" width="160" height="60" as="geometry" />
+        <mxCell id="authorizer" value="Lambda Authorizer&#xa;JWT + RBAC" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="700" y="200" width="160" height="55" as="geometry" />
         </mxCell>
-        <mxCell id="waf" value="AWS WAF&#xa;API Protection" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" parent="1" vertex="1">
-          <mxGeometry x="900" y="220" width="160" height="60" as="geometry" />
+        <mxCell id="waf" value="AWS WAF&#xa;API Protection" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="900" y="200" width="160" height="55" as="geometry" />
         </mxCell>
-        <mxCell id="L4bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d6b656;opacity=30;" parent="1" vertex="1">
-          <mxGeometry x="40" y="320" width="1574" height="100" as="geometry" />
+        <!-- LAYER 4 — LAMBDA COMPUTE (HTTP + Event-driven) -->
+        <mxCell id="L4bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d6b656;opacity=30;" vertex="1" parent="1">
+          <mxGeometry x="40" y="290" width="1574" height="200" as="geometry" />
         </mxCell>
-        <mxCell id="L4label" value="LAYER 4 — LAMBDA COMPUTE (FastAPI + Mangum)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=11;fontStyle=1;fontColor=#1B3A5C;" parent="1" vertex="1">
-          <mxGeometry x="50" y="325" width="300" height="20" as="geometry" />
+        <mxCell id="L4label" value="LAYER 4 — LAMBDA COMPUTE (FastAPI + Mangum for HTTP  |  Plain handler for event-driven)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=11;fontStyle=1;fontColor=#1B3A5C;" vertex="1" parent="1">
+          <mxGeometry x="50" y="295" width="600" height="20" as="geometry" />
         </mxCell>
-        <mxCell id="lCourses" value="Courses Lambda" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d6b656;" parent="1" vertex="1">
-          <mxGeometry x="100" y="345" width="130" height="50" as="geometry" />
+        <!-- HTTP Lambdas sub-label -->
+        <mxCell id="httpLabel" value="HTTP Lambdas (API Gateway trigger)" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=2;fontColor=#7d4e00;" vertex="1" parent="1">
+          <mxGeometry x="55" y="315" width="280" height="18" as="geometry" />
         </mxCell>
-        <mxCell id="lStudents" value="Students Lambda" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d6b656;" parent="1" vertex="1">
-          <mxGeometry x="250" y="345" width="130" height="50" as="geometry" />
+        <mxCell id="lCourses" value="Courses Lambda&#xa;512MB / 29s" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="55" y="335" width="130" height="50" as="geometry" />
         </mxCell>
-        <mxCell id="lTutor" value="Tutor Lambda" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d6b656;" parent="1" vertex="1">
-          <mxGeometry x="400" y="345" width="130" height="50" as="geometry" />
+        <mxCell id="lStudents" value="Students Lambda&#xa;512MB / 29s" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="200" y="335" width="130" height="50" as="geometry" />
         </mxCell>
-        <mxCell id="lQuiz" value="Quiz Lambda" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d6b656;" parent="1" vertex="1">
-          <mxGeometry x="550" y="345" width="130" height="50" as="geometry" />
+        <mxCell id="lTutor" value="Tutor Lambda&#xa;1024MB / 30s&#xa;(thin AgentCore wrapper)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="345" y="335" width="140" height="50" as="geometry" />
         </mxCell>
-        <mxCell id="lStream" value="Stream Processor&#xa;Lambda" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d6b656;" parent="1" vertex="1">
-          <mxGeometry x="700" y="345" width="130" height="50" as="geometry" />
+        <mxCell id="lQuiz" value="Quiz Lambda&#xa;512MB / 29s" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="500" y="335" width="130" height="50" as="geometry" />
         </mxCell>
-        <mxCell id="lGap" value="Gap Detection&#xa;Lambda" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d6b656;" parent="1" vertex="1">
-          <mxGeometry x="850" y="345" width="130" height="50" as="geometry" />
+        <mxCell id="lTeacher" value="Teacher Lambda&#xa;512MB / 29s" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="645" y="335" width="130" height="50" as="geometry" />
         </mxCell>
-        <mxCell id="lRec" value="Recommendation&#xa;Lambda" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d6b656;" parent="1" vertex="1">
-          <mxGeometry x="1000" y="345" width="130" height="50" as="geometry" />
+        <mxCell id="lAdmin" value="Admin Lambda&#xa;512MB / 29s" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="790" y="335" width="130" height="50" as="geometry" />
         </mxCell>
-        <mxCell id="lAlert" value="Faculty Alert&#xa;Lambda" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d6b656;" parent="1" vertex="1">
-          <mxGeometry x="1150" y="345" width="130" height="50" as="geometry" />
+        <!-- Event-driven Lambdas sub-label -->
+        <mxCell id="evtLabel" value="Event-driven Lambdas (EventBridge / DynamoDB Streams trigger) — call bedrock:InvokeModel directly, NOT AgentCore" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=2;fontColor=#7d4e00;" vertex="1" parent="1">
+          <mxGeometry x="55" y="393" width="700" height="18" as="geometry" />
         </mxCell>
-        <mxCell id="lContent" value="Content Ingestion&#xa;Lambda" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d6b656;" parent="1" vertex="1">
-          <mxGeometry x="1300" y="345" width="130" height="50" as="geometry" />
+        <mxCell id="lStream" value="Stream Processor&#xa;256MB / 60s&#xa;DynamoDB Streams trigger" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffd966;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="55" y="415" width="155" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="L3bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;opacity=30;" parent="1" vertex="1">
-          <mxGeometry x="40" y="440" width="1574" height="120" as="geometry" />
+        <mxCell id="lGap" value="Gap Detection&#xa;512MB / 60s&#xa;EventBridge: QuizCompleted&#xa;bedrock:InvokeModel" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffd966;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="225" y="415" width="155" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="L3label" value="LAYER 3 — AI AGENTS (Amazon Bedrock AgentCore)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=11;fontStyle=1;fontColor=#1B3A5C;" parent="1" vertex="1">
-          <mxGeometry x="50" y="445" width="320" height="20" as="geometry" />
+        <mxCell id="lRec" value="Recommendation&#xa;512MB / 60s&#xa;EventBridge: GapDetected&#xa;Amazon Personalize" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffd966;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="395" y="415" width="155" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="orchestrator" value="🎯 Orchestrator&#xa;AgentCore Runtime" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;fontSize=11;" parent="1" vertex="1">
-          <mxGeometry x="100" y="465" width="150" height="70" as="geometry" />
+        <mxCell id="lContent" value="Content Adaptation&#xa;512MB / 90s&#xa;EventBridge: GapDetected&#xa;bedrock:InvokeModel (Haiku)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffd966;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="565" y="415" width="165" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="tutorAgent" value="🎓 Tutor Agent&#xa;AgentCore Runtime&#xa;+ Knowledge Base" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;" parent="1" vertex="1">
-          <mxGeometry x="280" y="465" width="150" height="70" as="geometry" />
+        <mxCell id="lAssessment" value="Assessment&#xa;512MB / 60s&#xa;HTTP: POST /quiz/generate&#xa;bedrock:InvokeModel (Haiku)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffd966;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="745" y="415" width="165" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="assessAgent" value="📝 Assessment Agent&#xa;Lambda + Bedrock&#xa;Claude 3 Haiku" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;" parent="1" vertex="1">
-          <mxGeometry x="460" y="465" width="150" height="70" as="geometry" />
+        <!-- Legend for yellow vs orange -->
+        <mxCell id="legendHttp" value="■ HTTP Lambda" style="text;html=1;strokeColor=none;fillColor=none;fontSize=10;fontColor=#7d4e00;" vertex="1" parent="1">
+          <mxGeometry x="960" y="335" width="120" height="20" as="geometry" />
         </mxCell>
-        <mxCell id="gapAgent" value="🔍 Gap Detection&#xa;Lambda + Bedrock&#xa;InvokeModel" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;" parent="1" vertex="1">
-          <mxGeometry x="640" y="465" width="150" height="70" as="geometry" />
+        <mxCell id="legendEvt" value="■ Event-driven Lambda&#xa;  (calls InvokeModel)" style="text;html=1;strokeColor=none;fillColor=none;fontSize=10;fontColor=#7d4e00;" vertex="1" parent="1">
+          <mxGeometry x="960" y="355" width="160" height="30" as="geometry" />
         </mxCell>
-        <mxCell id="recAgent" value="📊 Recommendation&#xa;Lambda + Bedrock&#xa;InvokeModel" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;" parent="1" vertex="1">
-          <mxGeometry x="820" y="465" width="150" height="70" as="geometry" />
+        <!-- LAYER 3 — BEDROCK AGENTCORE (Orchestrator + Tutor ONLY) -->
+        <mxCell id="L3bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;opacity=30;" vertex="1" parent="1">
+          <mxGeometry x="40" y="510" width="1574" height="120" as="geometry" />
         </mxCell>
-        <mxCell id="adaptAgent" value="🔄 Content Adaptation&#xa;Lambda + Bedrock&#xa;InvokeModel" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;" parent="1" vertex="1">
-          <mxGeometry x="1000" y="465" width="150" height="70" as="geometry" />
+        <mxCell id="L3label" value="LAYER 3 — BEDROCK AGENTCORE RUNTIME (Orchestrator + Tutor Agent ONLY — conversational memory + KB RAG)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=11;fontStyle=1;fontColor=#1B3A5C;" vertex="1" parent="1">
+          <mxGeometry x="50" y="515" width="700" height="20" as="geometry" />
         </mxCell>
-        <mxCell id="kb" value="📚 Knowledge Base&#xa;OpenSearch Serverless&#xa;Vector Store" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;" parent="1" vertex="1">
-          <mxGeometry x="1200" y="465" width="150" height="70" as="geometry" />
+        <mxCell id="orchestrator" value="🎯 Orchestrator Agent&#xa;Bedrock AgentCore Runtime&#xa;Claude 3.5 Sonnet | temp 0.3&#xa;Context enrichment + A2A routing" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="100" y="535" width="220" height="80" as="geometry" />
         </mxCell>
-        <mxCell id="L2bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;opacity=30;" parent="1" vertex="1">
-          <mxGeometry x="40" y="580" width="1574" height="100" as="geometry" />
+        <mxCell id="tutorAgent" value="🎓 Tutor Agent&#xa;Bedrock AgentCore Runtime&#xa;Claude 3.5 Sonnet | temp 0.7&#xa;RAG over Knowledge Base&#xa;Multi-turn conversational memory" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="360" y="535" width="220" height="80" as="geometry" />
         </mxCell>
-        <mxCell id="L2label" value="LAYER 2 — DATA &amp; EVENTS" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=11;fontStyle=1;fontColor=#1B3A5C;" parent="1" vertex="1">
-          <mxGeometry x="50" y="585" width="220" height="20" as="geometry" />
+        <mxCell id="kb" value="📚 Bedrock Knowledge Base&#xa;OpenSearch Serverless&#xa;Vector Store&#xa;Course content chunks" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="620" y="535" width="180" height="80" as="geometry" />
         </mxCell>
-        <mxCell id="dynamo" value="Amazon DynamoDB&#xa;Single Table&#xa;3 GSIs + Streams" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;" parent="1" vertex="1">
-          <mxGeometry x="100" y="600" width="150" height="65" as="geometry" />
+        <mxCell id="agentcoreNote" value="⚠️  Only these two components run in AgentCore.&#xa;Gap Detection, Recommendation, Content Adaptation, Assessment&#xa;are Lambda functions calling bedrock:InvokeModel directly — NOT AgentCore." style="text;html=1;strokeColor=#9673a6;fillColor=#f3e8ff;align=left;fontSize=10;fontStyle=2;rounded=1;" vertex="1" parent="1">
+          <mxGeometry x="850" y="535" width="440" height="80" as="geometry" />
         </mxCell>
-        <mxCell id="eventbridge" value="Amazon EventBridge&#xa;Cognitive Loop&#xa;Event Bus" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;" parent="1" vertex="1">
-          <mxGeometry x="300" y="600" width="150" height="65" as="geometry" />
+        <!-- LAYER 2 — DATA -->
+        <mxCell id="L2bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;opacity=30;" vertex="1" parent="1">
+          <mxGeometry x="40" y="650" width="1574" height="100" as="geometry" />
         </mxCell>
-        <mxCell id="s3" value="Amazon S3&#xa;Content Storage&#xa;(Markdown/PDF/Video)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;" parent="1" vertex="1">
-          <mxGeometry x="500" y="600" width="150" height="65" as="geometry" />
+        <mxCell id="L2label" value="LAYER 2 — DATA &amp; EVENTS" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=11;fontStyle=1;fontColor=#1B3A5C;" vertex="1" parent="1">
+          <mxGeometry x="50" y="655" width="220" height="20" as="geometry" />
         </mxCell>
-        <mxCell id="elasticache" value="ElastiCache Redis&#xa;Tutor Conversation&#xa;History (24hr TTL)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;" parent="1" vertex="1">
-          <mxGeometry x="700" y="600" width="150" height="65" as="geometry" />
+        <mxCell id="dynamo" value="Amazon DynamoDB&#xa;Single Table + 3 GSIs&#xa;+ Streams" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="80" y="672" width="150" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="personalize" value="Amazon Personalize&#xa;Learning Path&#xa;Recommendations" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;" parent="1" vertex="1">
-          <mxGeometry x="900" y="600" width="150" height="65" as="geometry" />
+        <mxCell id="eventbridge" value="Amazon EventBridge&#xa;Cognitive Loop&#xa;Event Bus" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="260" y="672" width="150" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="cloudfront" value="Amazon CloudFront&#xa;CDN for Video/PDF&#xa;Static Assets" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;" parent="1" vertex="1">
-          <mxGeometry x="1100" y="600" width="150" height="65" as="geometry" />
+        <mxCell id="s3" value="Amazon S3&#xa;Content Storage&#xa;Markdown / PDF / Video" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="440" y="672" width="150" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="secretsmgr" value="Secrets Manager&#xa;+ SSM Param Store&#xa;IdP Credentials" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;" parent="1" vertex="1">
-          <mxGeometry x="1300" y="600" width="150" height="65" as="geometry" />
+        <mxCell id="elasticache" value="ElastiCache Redis&#xa;Conversation History&#xa;24hr TTL" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="620" y="672" width="150" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="L1bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;opacity=30;" parent="1" vertex="1">
-          <mxGeometry x="40" y="700" width="1574" height="90" as="geometry" />
+        <mxCell id="personalize" value="Amazon Personalize&#xa;Learning Path&#xa;Recommendations" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="800" y="672" width="150" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="L1label" value="LAYER 1 — CONTENT PROVIDER INTERFACE (CPI) — CMS ADAPTERS" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=11;fontStyle=1;fontColor=#1B3A5C;" parent="1" vertex="1">
-          <mxGeometry x="50" y="705" width="400" height="20" as="geometry" />
+        <mxCell id="cloudfront" value="Amazon CloudFront&#xa;CDN — Video / PDF&#xa;Static Assets" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="980" y="672" width="150" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="cpiS3" value="S3 Plugin&#xa;(Default)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" parent="1" vertex="1">
-          <mxGeometry x="120" y="720" width="120" height="50" as="geometry" />
+        <mxCell id="secretsmgr" value="Secrets Manager&#xa;+ SSM Param Store&#xa;IdP Credentials" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1160" y="672" width="150" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="cpiStrapi" value="Strapi Plugin" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" parent="1" vertex="1">
-          <mxGeometry x="280" y="720" width="120" height="50" as="geometry" />
+        <!-- LAYER 1 — CMS -->
+        <mxCell id="L1bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;opacity=30;" vertex="1" parent="1">
+          <mxGeometry x="40" y="770" width="1574" height="80" as="geometry" />
         </mxCell>
-        <mxCell id="cpiContentful" value="Contentful Plugin" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" parent="1" vertex="1">
-          <mxGeometry x="440" y="720" width="120" height="50" as="geometry" />
+        <mxCell id="L1label" value="LAYER 1 — CONTENT PROVIDER INTERFACE (CPI) — CMS ADAPTERS" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=11;fontStyle=1;fontColor=#1B3A5C;" vertex="1" parent="1">
+          <mxGeometry x="50" y="775" width="440" height="20" as="geometry" />
         </mxCell>
-        <mxCell id="cpiGClassroom" value="Google Classroom&#xa;Plugin" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" parent="1" vertex="1">
-          <mxGeometry x="600" y="720" width="120" height="50" as="geometry" />
+        <mxCell id="cpiS3" value="S3 Plugin (Default)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="100" y="795" width="150" height="40" as="geometry" />
         </mxCell>
-        <mxCell id="cpiCustom" value="Custom Plugin&#xa;Template" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" parent="1" vertex="1">
-          <mxGeometry x="760" y="720" width="120" height="50" as="geometry" />
+        <mxCell id="cpiStrapi" value="Strapi Plugin" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="270" y="795" width="150" height="40" as="geometry" />
         </mxCell>
-        <mxCell id="analyticsNote" value="ANALYTICS: DynamoDB Streams → Lambda → S3 → Glue → Athena → QuickSight" style="text;html=1;strokeColor=#d6b656;fillColor=#fff2cc;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=1;fontSize=10;fontStyle=2;" parent="1" vertex="1">
-          <mxGeometry x="1050" y="720" width="430" height="50" as="geometry" />
+        <mxCell id="cpiContentful" value="Contentful Plugin" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="440" y="795" width="150" height="40" as="geometry" />
         </mxCell>
-        <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;" parent="1" source="nextjs" target="apigw" edge="1">
+        <mxCell id="cpiGC" value="Google Classroom Plugin" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="610" y="795" width="150" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="cpiCustom" value="Custom Plugin Template" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="780" y="795" width="150" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="analyticsNote" value="ANALYTICS: DynamoDB Streams → Lambda → S3 → Glue → Athena → QuickSight" style="text;html=1;strokeColor=#d6b656;fillColor=#fff2cc;align=center;fontSize=10;fontStyle=2;rounded=1;" vertex="1" parent="1">
+          <mxGeometry x="1000" y="795" width="400" height="40" as="geometry" />
+        </mxCell>
+        <!-- Key connectors -->
+        <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="nextjs" target="apigw" parent="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;" parent="1" source="apigw" target="authorizer" edge="1">
+        <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="apigw" target="lTutor" parent="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;" parent="1" source="apigw" target="lTutor" edge="1">
+        <mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="lTutor" target="orchestrator" parent="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e4" style="edgeStyle=orthogonalEdgeStyle;" parent="1" source="lTutor" target="orchestrator" edge="1">
+        <mxCell id="e4" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="orchestrator" target="tutorAgent" parent="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e5" style="edgeStyle=orthogonalEdgeStyle;" parent="1" source="orchestrator" target="tutorAgent" edge="1">
+        <mxCell id="e5" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="tutorAgent" target="kb" parent="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e6" style="edgeStyle=orthogonalEdgeStyle;" parent="1" source="tutorAgent" target="kb" edge="1">
+        <mxCell id="e6" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="dynamo" target="eventbridge" parent="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e7" style="edgeStyle=orthogonalEdgeStyle;" parent="1" source="dynamo" target="eventbridge" edge="1">
+        <mxCell id="e7" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="eventbridge" target="lGap" parent="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e8" style="edgeStyle=orthogonalEdgeStyle;" parent="1" source="lQuiz" target="dynamo" edge="1">
+        <mxCell id="e8" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="lStream" target="eventbridge" parent="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e9" style="edgeStyle=orthogonalEdgeStyle;" parent="1" source="eventbridge" target="lGap" edge="1">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points">
-              <mxPoint x="375" y="590" />
-              <mxPoint x="915" y="590" />
-            </Array>
-          </mxGeometry>
+        <mxCell id="e9" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="s3" target="kb" parent="1">
+          <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e10" style="edgeStyle=orthogonalEdgeStyle;" parent="1" edge="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="650" y="617.5" as="sourcePoint" />
-            <mxPoint x="1275" y="520" as="targetPoint" />
-          </mxGeometry>
+        <mxCell id="e10" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="apigw" target="lCourses" parent="1">
+          <mxGeometry relative="1" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
@@ -200,11 +212,10 @@
         <mxCell id="title" value="CampusIQ — Authentication Flow" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=18;fontStyle=1;fontColor=#1B3A5C;" vertex="1" parent="1">
           <mxGeometry x="200" y="20" width="700" height="36" as="geometry" />
         </mxCell>
-        <!-- Actors -->
         <mxCell id="student" value="👤 Student&#xa;Browser" style="shape=mxgraph.flowchart.start_2;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" vertex="1" parent="1">
           <mxGeometry x="60" y="100" width="80" height="80" as="geometry" />
         </mxCell>
-        <mxCell id="nextjsApp" value="Next.js&#xa;App&#xa;(NextAuth.js)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" vertex="1" parent="1">
+        <mxCell id="nextjsApp" value="Next.js App&#xa;(NextAuth.js)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" vertex="1" parent="1">
           <mxGeometry x="220" y="110" width="120" height="60" as="geometry" />
         </mxCell>
         <mxCell id="cognitoBox" value="Amazon Cognito&#xa;User Pool&#xa;(Per Institution)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" vertex="1" parent="1">
@@ -225,39 +236,9 @@
         <mxCell id="dynamoBox" value="DynamoDB&#xa;PK=STUDENT#{sub}" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;" vertex="1" parent="1">
           <mxGeometry x="660" y="420" width="140" height="60" as="geometry" />
         </mxCell>
-        <!-- Step labels -->
-        <mxCell id="s1" value="1. Navigate to CampusIQ login" style="text;html=1;strokeColor=none;fillColor=#f5f5f5;align=center;fontSize=9;fontColor=#333333;" vertex="1" parent="1">
-          <mxGeometry x="130" y="120" width="80" height="40" as="geometry" />
-        </mxCell>
-        <mxCell id="s2" value="2. Detect institution&#xa;from email domain" style="text;html=1;strokeColor=none;fillColor=#f5f5f5;align=center;fontSize=9;fontColor=#333333;" vertex="1" parent="1">
-          <mxGeometry x="340" y="90" width="80" height="40" as="geometry" />
-        </mxCell>
-        <mxCell id="s3label" value="3. Redirect to&#xa;Cognito Hosted UI&#xa;→ IdP OIDC/SAML" style="text;html=1;strokeColor=none;fillColor=#f5f5f5;align=center;fontSize=9;fontColor=#333333;" vertex="1" parent="1">
-          <mxGeometry x="580" y="90" width="80" height="50" as="geometry" />
-        </mxCell>
-        <mxCell id="s4label" value="4. IdP authenticates&#xa;user, returns&#xa;authorization_code" style="text;html=1;strokeColor=none;fillColor=#f5f5f5;align=center;fontSize=9;fontColor=#333333;" vertex="1" parent="1">
-          <mxGeometry x="580" y="175" width="80" height="50" as="geometry" />
-        </mxCell>
-        <mxCell id="s5label" value="5. Pre-Token Lambda&#xa;enriches JWT with&#xa;studentId, role, grade" style="text;html=1;strokeColor=none;fillColor=#f5f5f5;align=center;fontSize=9;fontColor=#333333;" vertex="1" parent="1">
-          <mxGeometry x="340" y="240" width="80" height="60" as="geometry" />
-        </mxCell>
-        <mxCell id="s6label" value="6. Cognito issues JWT&#xa;NextAuth stores in&#xa;HTTP-only cookie" style="text;html=1;strokeColor=none;fillColor=#f5f5f5;align=center;fontSize=9;fontColor=#333333;" vertex="1" parent="1">
-          <mxGeometry x="130" y="240" width="80" height="60" as="geometry" />
-        </mxCell>
-        <mxCell id="s7label" value="7. API calls with&#xa;Bearer token" style="text;html=1;strokeColor=none;fillColor=#f5f5f5;align=center;fontSize=9;fontColor=#333333;" vertex="1" parent="1">
-          <mxGeometry x="130" y="380" width="80" height="40" as="geometry" />
-        </mxCell>
-        <mxCell id="s8label" value="8. Authorizer validates&#xa;JWT, injects role&#xa;+ sub into context" style="text;html=1;strokeColor=none;fillColor=#f5f5f5;align=center;fontSize=9;fontColor=#333333;" vertex="1" parent="1">
-          <mxGeometry x="340" y="390" width="80" height="60" as="geometry" />
-        </mxCell>
-        <mxCell id="s9label" value="9. Lambda reads&#xa;role + sub,&#xa;queries DynamoDB" style="text;html=1;strokeColor=none;fillColor=#f5f5f5;align=center;fontSize=9;fontColor=#333333;" vertex="1" parent="1">
-          <mxGeometry x="580" y="390" width="80" height="60" as="geometry" />
-        </mxCell>
-        <!-- JWT claim box -->
         <mxCell id="jwtBox" value="JWT Custom Claims:&#xa;• sub (Cognito UUID → DynamoDB PK)&#xa;• cognito:groups → STUDENT | TEACHER | ADMIN&#xa;• custom:studentId&#xa;• custom:institutionId&#xa;• custom:grade&#xa;• custom:idpProvider" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;align=left;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="660" y="260" width="280" height="120" as="geometry" />
         </mxCell>
-        <!-- Edges -->
         <mxCell id="ae1" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="student" target="nextjsApp" parent="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
@@ -324,25 +305,25 @@
         <mxCell id="cStep4" value="④ Stream Processor Lambda&#xa;Translates DynamoDB event&#xa;→ EventBridge QuizCompleted event" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d6b656;fontSize=10;" parent="1" vertex="1">
           <mxGeometry x="790" y="90" width="200" height="80" as="geometry" />
         </mxCell>
-        <mxCell id="cStep5" value="⑤ EventBridge&#xa;Custom Event Bus&#xa;source: campusiq.student&#xa;detail-type: QuizCompleted" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1;fontSize=10;" parent="1" vertex="1">
+        <mxCell id="cStep5" value="⑤ EventBridge&#xa;Custom Event Bus&#xa;source: campusiq.quiz&#xa;detail-type: QuizCompleted" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1;fontSize=10;" parent="1" vertex="1">
           <mxGeometry x="570" y="240" width="180" height="90" as="geometry" />
         </mxCell>
-        <mxCell id="cStep6" value="⑥ Gap Detection Lambda&#xa;Calculates concept weakness&#xa;gap_severity: 0.0–1.0&#xa;Writes GAP records to DynamoDB&#xa;GSI2_SK = zero-padded severity" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;" parent="1" vertex="1">
-          <mxGeometry x="320" y="230" width="200" height="110" as="geometry" />
+        <mxCell id="cStep6" value="⑥ Gap Detection Lambda&#xa;(calls bedrock:InvokeModel)&#xa;Calculates concept weakness&#xa;gap_severity: 0.0–1.0&#xa;Writes GAP records to DynamoDB" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffd966;strokeColor=#d6b656;fontSize=10;" parent="1" vertex="1">
+          <mxGeometry x="320" y="230" width="210" height="110" as="geometry" />
         </mxCell>
         <mxCell id="cStep7" value="⑦ If severity ≥ 0.700&#xa;→ GapDetected event fired&#xa;→ Faculty Alert Lambda&#xa;→ TeacherAlert record" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;" parent="1" vertex="1">
           <mxGeometry x="80" y="230" width="190" height="90" as="geometry" />
         </mxCell>
-        <mxCell id="cStep8" value="⑧ Recommendation Lambda&#xa;Queries Amazon Personalize&#xa;with gap context&#xa;Updates LearningPath in DynamoDB" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" parent="1" vertex="1">
+        <mxCell id="cStep8" value="⑧ Recommendation Lambda&#xa;(calls Amazon Personalize)&#xa;Updates LearningPath in DynamoDB" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffd966;strokeColor=#d6b656;fontSize=10;" parent="1" vertex="1">
           <mxGeometry x="790" y="250" width="200" height="90" as="geometry" />
         </mxCell>
-        <mxCell id="cStep9" value="⑨ Content Adaptation Lambda&#xa;Adjusts next module difficulty&#xa;via Bedrock InvokeModel&#xa;Rewrites content at new level" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" parent="1" vertex="1">
+        <mxCell id="cStep9" value="⑨ Content Adaptation Lambda&#xa;(calls bedrock:InvokeModel Haiku)&#xa;Rewrites content at lower difficulty&#xa;Only if severity &gt; 0.85" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffd966;strokeColor=#d6b656;fontSize=10;" parent="1" vertex="1">
           <mxGeometry x="790" y="410" width="200" height="90" as="geometry" />
         </mxCell>
-        <mxCell id="cStep10" value="⑩ Next Tutor Call:&#xa;Orchestrator reads top 5 gaps&#xa;via GapSeverityIndex GSI&#xa;Injects gap context into&#xa;every Tutor Agent prompt" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;fontSize=10;" parent="1" vertex="1">
-          <mxGeometry x="320" y="420" width="200" height="100" as="geometry" />
+        <mxCell id="cStep10" value="⑩ Next Tutor Call:&#xa;Orchestrator (AgentCore) reads&#xa;top 5 gaps via GapSeverityIndex&#xa;Injects gap context into&#xa;Tutor Agent prompt" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;fontSize=10;" parent="1" vertex="1">
+          <mxGeometry x="320" y="420" width="210" height="100" as="geometry" />
         </mxCell>
-        <mxCell id="cStep11" value="⑪ Student Next Session:&#xa;Sees personalised module sequence&#xa;Tutor proactively addresses weak concepts&#xa;Content at adjusted difficulty" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;fontSize=10;" parent="1" vertex="1">
+        <mxCell id="cStep11" value="⑪ Student Next Session:&#xa;Personalised module sequence&#xa;Tutor proactively addresses&#xa;weak concepts&#xa;Content at adjusted difficulty" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;fontSize=10;" parent="1" vertex="1">
           <mxGeometry x="80" y="420" width="200" height="100" as="geometry" />
         </mxCell>
         <mxCell id="loopLabel" value="🔁 LOOP REPEATS ON EVERY INTERACTION" style="text;html=1;strokeColor=#b85450;fillColor=#f8cecc;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=1;fontSize=11;fontStyle=1;" parent="1" vertex="1">
@@ -351,8 +332,8 @@
         <mxCell id="severityBox" value="gap_severity scale:&#xa;0.0 = Mastered&#xa;0.3 = Developing&#xa;0.7 = At-Risk threshold&#xa;1.0 = Unknown / Not seen" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;align=left;fontSize=10;" parent="1" vertex="1">
           <mxGeometry x="60" y="570" width="200" height="90" as="geometry" />
         </mxCell>
-        <mxCell id="ebSchema" value="EventBridge event shape:&#xa;{ source: &#39;campusiq.student&#39;,&#xa;  detail-type: &#39;QuizCompleted&#39;,&#xa;  detail: { studentId, courseId,&#xa;  moduleId, score, weakConcepts,&#xa;  domain, timestamp } }" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;align=left;fontSize=10;" parent="1" vertex="1">
-          <mxGeometry x="570" y="400" width="190" height="110" as="geometry" />
+        <mxCell id="lambdaNote" value="Note: Gap Detection, Recommendation, Content Adaptation&#xa;are Lambda functions calling bedrock:InvokeModel directly.&#xa;They are NOT AgentCore agents." style="text;html=1;strokeColor=#d6b656;fillColor=#fff2cc;align=center;fontSize=10;rounded=1;fontStyle=2;" parent="1" vertex="1">
+          <mxGeometry x="570" y="560" width="430" height="50" as="geometry" />
         </mxCell>
         <mxCell id="ce1" style="edgeStyle=orthogonalEdgeStyle;" parent="1" source="cStep1" target="cStep2" edge="1">
           <mxGeometry relative="1" as="geometry" />
@@ -403,7 +384,6 @@
         <mxCell id="title" value="CampusIQ — Tutor Chat Flow" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=18;fontStyle=1;fontColor=#1B3A5C;" vertex="1" parent="1">
           <mxGeometry x="200" y="15" width="700" height="36" as="geometry" />
         </mxCell>
-        <!-- Components -->
         <mxCell id="tStudent" value="👤 Student&#xa;(Next.js TutorSidebar)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" vertex="1" parent="1">
           <mxGeometry x="60" y="100" width="150" height="70" as="geometry" />
         </mxCell>
@@ -413,14 +393,14 @@
         <mxCell id="tAuth" value="Lambda Authorizer&#xa;Validate JWT&#xa;Inject sub + role" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="280" y="200" width="140" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="tTutorLambda" value="Tutor Lambda&#xa;(FastAPI + Mangum)&#xa;1024MB / 30s timeout" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d6b656;fontStyle=1;" vertex="1" parent="1">
-          <mxGeometry x="490" y="110" width="160" height="70" as="geometry" />
+        <mxCell id="tTutorLambda" value="Tutor Lambda&#xa;(FastAPI + Mangum)&#xa;1024MB / 30s&#xa;Thin AgentCore wrapper" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d6b656;fontStyle=1;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="490" y="105" width="160" height="75" as="geometry" />
         </mxCell>
         <mxCell id="tRedis" value="ElastiCache Redis&#xa;Read conversation&#xa;history (session_id)&#xa;24hr TTL" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="490" y="230" width="160" height="80" as="geometry" />
         </mxCell>
-        <mxCell id="tOrchestrator" value="🎯 Orchestrator Agent&#xa;Bedrock AgentCore Runtime&#xa;Claude 3.5 Sonnet" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;" vertex="1" parent="1">
-          <mxGeometry x="720" y="110" width="180" height="70" as="geometry" />
+        <mxCell id="tOrchestrator" value="🎯 Orchestrator Agent&#xa;Bedrock AgentCore Runtime&#xa;Claude 3.5 Sonnet | temp 0.3&#xa;Context enrichment + routing" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="720" y="105" width="190" height="75" as="geometry" />
         </mxCell>
         <mxCell id="tDynamo1" value="DynamoDB&#xa;Read student profile&#xa;+ enrolments&#xa;+ progress summary" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="720" y="230" width="160" height="80" as="geometry" />
@@ -428,8 +408,8 @@
         <mxCell id="tDynamo2" value="DynamoDB&#xa;GapSeverityIndex GSI&#xa;Top 5 weakest concepts&#xa;ScanIndexForward=False" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="920" y="230" width="170" height="80" as="geometry" />
         </mxCell>
-        <mxCell id="tTutorAgent" value="🎓 Tutor Agent&#xa;Bedrock AgentCore Runtime&#xa;RAG over Knowledge Base&#xa;Claude 3.5 Sonnet" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;" vertex="1" parent="1">
-          <mxGeometry x="720" y="390" width="180" height="80" as="geometry" />
+        <mxCell id="tTutorAgent" value="🎓 Tutor Agent&#xa;Bedrock AgentCore Runtime&#xa;Claude 3.5 Sonnet | temp 0.7&#xa;RAG + multi-turn memory" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="720" y="390" width="190" height="80" as="geometry" />
         </mxCell>
         <mxCell id="tKB" value="📚 Bedrock Knowledge Base&#xa;OpenSearch Serverless&#xa;Vector search over&#xa;course content chunks" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="960" y="390" width="170" height="80" as="geometry" />
@@ -437,18 +417,15 @@
         <mxCell id="tGuardrails" value="Bedrock Guardrails&#xa;Domain-specific&#xa;content filtering" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="720" y="520" width="160" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="tResponse" value="Response returned&#xa;to student&#xa;(non-streaming)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+        <mxCell id="tResponse" value="Response returned&#xa;to student" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
           <mxGeometry x="280" y="530" width="150" height="60" as="geometry" />
         </mxCell>
-        <!-- Enriched context box -->
-        <mxCell id="enrichBox" value="Enriched Context Payload (Orchestrator injects before dispatch):&#xa;• Student profile: name, grade, domain, enrolled courses&#xa;• Gap summary: top 5 weakest concepts with severity scores&#xa;• Active learning path: recommended next modules&#xa;• Domain config: guardrails profile, tutor persona, temperature&#xa;• Conversation history: last N turns from Redis" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#9673a6;align=left;fontSize=10;" vertex="1" parent="1">
-          <mxGeometry x="60" y="390" width="610" height="110" as="geometry" />
+        <mxCell id="enrichBox" value="Enriched Context Payload (Orchestrator injects before dispatch to Tutor Agent):&#xa;• Student profile: name, grade, domain, enrolled courses&#xa;• Gap summary: top 5 weakest concepts with severity scores (from GapSeverityIndex GSI)&#xa;• Active learning path: recommended next modules&#xa;• Domain config: guardrails profile, tutor persona, temperature" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#9673a6;align=left;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="60" y="390" width="610" height="100" as="geometry" />
         </mxCell>
-        <!-- EventStream note -->
-        <mxCell id="esNote" value="Note: boto3 invoke_agent always returns EventStream&#xa;even non-streaming — iterate chunks to accumulate response" style="text;html=1;strokeColor=#d6b656;fillColor=#fff2cc;align=center;fontSize=10;rounded=1;" vertex="1" parent="1">
+        <mxCell id="esNote" value="boto3 invoke_agent always returns EventStream even non-streaming — iterate chunks to accumulate response" style="text;html=1;strokeColor=#d6b656;fillColor=#fff2cc;align=center;fontSize=10;rounded=1;" vertex="1" parent="1">
           <mxGeometry x="490" y="560" width="360" height="40" as="geometry" />
         </mxCell>
-        <!-- Edges -->
         <mxCell id="te1" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="tStudent" target="tApigw" parent="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
@@ -501,7 +478,6 @@
         <mxCell id="title" value="CampusIQ — Content Ingestion Flow" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=18;fontStyle=1;fontColor=#1B3A5C;" vertex="1" parent="1">
           <mxGeometry x="200" y="15" width="700" height="36" as="geometry" />
         </mxCell>
-        <!-- Rich Text path -->
         <mxCell id="rtHeader" value="PATH A — Rich Text (Markdown)" style="text;html=1;strokeColor=none;fillColor=#dae8fc;align=center;verticalAlign=middle;fontStyle=1;fontSize=12;rounded=1;" vertex="1" parent="1">
           <mxGeometry x="40" y="70" width="280" height="30" as="geometry" />
         </mxCell>
@@ -514,7 +490,6 @@
         <mxCell id="rtS3" value="S3&#xa;content.md saved&#xa;{domain}/{courseId}/&#xa;modules/{moduleId}/content.md" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="60" y="320" width="140" height="80" as="geometry" />
         </mxCell>
-        <!-- PDF path -->
         <mxCell id="pdfHeader" value="PATH B — PDF Upload" style="text;html=1;strokeColor=none;fillColor=#d5e8d4;align=center;verticalAlign=middle;fontStyle=1;fontSize=12;rounded=1;" vertex="1" parent="1">
           <mxGeometry x="360" y="70" width="220" height="30" as="geometry" />
         </mxCell>
@@ -527,7 +502,6 @@
         <mxCell id="pdfS3Direct" value="Browser uploads&#xa;directly to S3&#xa;(bypasses API GW&#xa;— no Lambda cost)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="380" y="330" width="140" height="80" as="geometry" />
         </mxCell>
-        <!-- Video path -->
         <mxCell id="vidHeader" value="PATH C — Video Upload" style="text;html=1;strokeColor=none;fillColor=#ffe6cc;align=center;verticalAlign=middle;fontStyle=1;fontSize=12;rounded=1;" vertex="1" parent="1">
           <mxGeometry x="640" y="70" width="220" height="30" as="geometry" />
         </mxCell>
@@ -543,7 +517,6 @@
         <mxCell id="vidTranscribe" value="Amazon Transcribe&#xa;Audio → WebVTT&#xa;Saved to S3&#xa;transcript.vtt" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="740" y="340" width="140" height="70" as="geometry" />
         </mxCell>
-        <!-- Common converge -->
         <mxCell id="s3Trigger" value="S3 ObjectCreated&#xa;event triggers&#xa;Ingestion Pipeline" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1;" vertex="1" parent="1">
           <mxGeometry x="380" y="470" width="160" height="60" as="geometry" />
         </mxCell>
@@ -556,15 +529,12 @@
         <mxCell id="aiAvailable" value="✅ Content Available&#xa;to Tutor Agent&#xa;2–20 min depending&#xa;on content type" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" vertex="1" parent="1">
           <mxGeometry x="380" y="700" width="160" height="70" as="geometry" />
         </mxCell>
-        <!-- Timing note -->
         <mxCell id="timingBox" value="Ingestion times:&#xa;Rich Text (Markdown): 2–3 min&#xa;PDF: 3–5 min&#xa;Video (transcript): 10–20 min&#xa;Quiz (DynamoDB direct): Immediate" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;align=left;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="760" y="580" width="200" height="90" as="geometry" />
         </mxCell>
-        <!-- Draft note -->
         <mxCell id="draftNote" value="Draft vs Published:&#xa;S3 object tagged status=draft&#xa;KB ingests regardless (for teacher preview)&#xa;Student API filters by status=published in module manifest" style="text;html=1;strokeColor=#6c8ebf;fillColor=#dae8fc;align=left;fontSize=10;rounded=1;" vertex="1" parent="1">
           <mxGeometry x="40" y="700" width="310" height="70" as="geometry" />
         </mxCell>
-        <!-- Edges -->
         <mxCell id="ie1" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="rtEditor" target="rtAutosave" parent="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
@@ -621,14 +591,12 @@
         <mxCell id="subtitle" value="One cdk deploy command provisions all infrastructure in the institution&#39;s own AWS account" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=11;fontStyle=2;fontColor=#666666;" vertex="1" parent="1">
           <mxGeometry x="100" y="48" width="900" height="24" as="geometry" />
         </mxCell>
-        <!-- Input -->
         <mxCell id="dConfig" value="campusiq.config.json&#xa;{ deployment: { name, region,&#xa;  account, environment },&#xa;  idp: { type },&#xa;  cms_plugin: { type },&#xa;  domain: { type } }" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;align=left;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="60" y="100" width="210" height="100" as="geometry" />
         </mxCell>
         <mxCell id="dAppPy" value="infrastructure/cdk/app.py&#xa;Reads config&#xa;Instantiates stacks&#xa;cdk deploy --all" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" vertex="1" parent="1">
           <mxGeometry x="340" y="120" width="160" height="70" as="geometry" />
         </mxCell>
-        <!-- Stack 1 -->
         <mxCell id="dStack1" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;opacity=40;" vertex="1" parent="1">
           <mxGeometry x="60" y="270" width="300" height="200" as="geometry" />
         </mxCell>
@@ -638,7 +606,6 @@
         <mxCell id="dDynamo" value="DynamoDB Table&#xa;campusiq-{inst}-{env}-table&#xa;• EntityTypeIndex GSI&#xa;• GapSeverityIndex GSI&#xa;• AtRiskIndex GSI&#xa;• Streams: NEW_AND_OLD_IMAGES&#xa;• RemovalPolicy: RETAIN&#xa;• PITR enabled" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;align=left;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="80" y="305" width="260" height="150" as="geometry" />
         </mxCell>
-        <!-- Stack 2 -->
         <mxCell id="dStack2" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;opacity=40;" vertex="1" parent="1">
           <mxGeometry x="420" y="270" width="300" height="200" as="geometry" />
         </mxCell>
@@ -648,7 +615,6 @@
         <mxCell id="dCognito" value="Cognito User Pool&#xa;• Entra ID / Google / SAML federation&#xa;• Pre-Token Generation Lambda&#xa;  (injects studentId, grade, role)&#xa;• Post-Auth Lambda&#xa;  (profile sync on federated login)&#xa;• Custom JWT claims" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;align=left;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="440" y="305" width="260" height="150" as="geometry" />
         </mxCell>
-        <!-- Stack 3 -->
         <mxCell id="dStack3" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;opacity=40;" vertex="1" parent="1">
           <mxGeometry x="780" y="270" width="300" height="200" as="geometry" />
         </mxCell>
@@ -658,14 +624,12 @@
         <mxCell id="dS3Stack" value="S3 Content Bucket&#xa;• Versioning enabled&#xa;• 10 versions retained (90-day expiry)&#xa;• S3 event → KB ingestion Lambda&#xa;CloudFront Distribution&#xa;• OAC for S3 access&#xa;• HLS video + PDF delivery" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;align=left;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="800" y="305" width="260" height="150" as="geometry" />
         </mxCell>
-        <!-- Stack 4 -->
         <mxCell id="dStack4" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d6b656;opacity=40;" vertex="1" parent="1">
           <mxGeometry x="60" y="520" width="1020" height="220" as="geometry" />
         </mxCell>
-        <mxCell id="dStack4Label" value="Stack 4: Compute (Next to be built) — depends on Stack 1, 2, 3" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=12;fontColor=#1B3A5C;" vertex="1" parent="1">
-          <mxGeometry x="70" y="528" width="600" height="24" as="geometry" />
+        <mxCell id="dStack4Label" value="Stack 4: Compute — depends on Stack 1, 2, 3" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=12;fontColor=#1B3A5C;" vertex="1" parent="1">
+          <mxGeometry x="70" y="528" width="500" height="24" as="geometry" />
         </mxCell>
-        <!-- Lambdas in compute stack -->
         <mxCell id="dcL1" value="Courses Lambda" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="80" y="560" width="110" height="50" as="geometry" />
         </mxCell>
@@ -678,30 +642,28 @@
         <mxCell id="dcL4" value="Quiz Lambda" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="470" y="560" width="110" height="50" as="geometry" />
         </mxCell>
-        <mxCell id="dcL5" value="Stream Processor&#xa;Lambda" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="dcL5" value="Stream Processor&#xa;Lambda" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffd966;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="600" y="560" width="110" height="50" as="geometry" />
         </mxCell>
-        <mxCell id="dcL6" value="Gap Detection&#xa;Lambda" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="dcL6" value="Gap Detection&#xa;Lambda" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffd966;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="730" y="560" width="110" height="50" as="geometry" />
         </mxCell>
-        <mxCell id="dcL7" value="Recommendation&#xa;Lambda" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="dcL7" value="Recommendation&#xa;Lambda" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffd966;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="1">
           <mxGeometry x="860" y="560" width="110" height="50" as="geometry" />
         </mxCell>
-        <mxCell id="dcApigw" value="API Gateway&#xa;+ Lambda Authorizer&#xa;+ WAF" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;fontSize=10;" vertex="1" parent="1">
-          <mxGeometry x="340" y="640" width="400" height="60" as="geometry" />
+        <mxCell id="dcApigw" value="API Gateway + Lambda Authorizer + WAF" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="280" y="640" width="500" height="50" as="geometry" />
         </mxCell>
-        <!-- Shared env vars -->
-        <mxCell id="envBox" value="Shared env vars on all Lambdas (set by CDK):&#xa;DYNAMODB_TABLE_NAME • ALLOWED_ORIGINS • POWERTOOLS_SERVICE_NAME • LOG_LEVEL&#xa;Tutor Lambda also gets: TUTOR_AGENT_ID • TUTOR_AGENT_ALIAS_ID" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;align=left;fontSize=10;" vertex="1" parent="1">
-          <mxGeometry x="1100" y="520" width="300" height="80" as="geometry" />
+        <mxCell id="envBox" value="Shared env vars on all Lambdas:&#xa;DYNAMODB_TABLE_NAME • ALLOWED_ORIGINS • POWERTOOLS_SERVICE_NAME • LOG_LEVEL&#xa;Tutor Lambda also: TUTOR_AGENT_ID • TUTOR_AGENT_ALIAS_ID" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;align=left;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1100" y="520" width="300" height="70" as="geometry" />
         </mxCell>
-        <!-- Stack dependency arrows -->
-        <mxCell id="dep1" value="table.table_name&#xa;table.table_arn" style="edgeStyle=orthogonalEdgeStyle;dashed=1;endArrow=open;" edge="1" source="dStack1" target="dStack4" parent="1">
+        <mxCell id="dep1" value="table.table_name" style="edgeStyle=orthogonalEdgeStyle;dashed=1;endArrow=open;" edge="1" source="dStack1" target="dStack4" parent="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="dep2" value="user_pool.user_pool_id" style="edgeStyle=orthogonalEdgeStyle;dashed=1;endArrow=open;" edge="1" source="dStack2" target="dStack4" parent="1">
+        <mxCell id="dep2" value="user_pool_id" style="edgeStyle=orthogonalEdgeStyle;dashed=1;endArrow=open;" edge="1" source="dStack2" target="dStack4" parent="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="dep3" value="bucket.bucket_name" style="edgeStyle=orthogonalEdgeStyle;dashed=1;endArrow=open;" edge="1" source="dStack3" target="dStack4" parent="1">
+        <mxCell id="dep3" value="bucket_name" style="edgeStyle=orthogonalEdgeStyle;dashed=1;endArrow=open;" edge="1" source="dStack3" target="dStack4" parent="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="dep4" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="dConfig" target="dAppPy" parent="1">
@@ -716,9 +678,8 @@
         <mxCell id="dep7" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="dAppPy" target="dStack3" parent="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <!-- Data residency note -->
-        <mxCell id="residencyNote" value="🏛️ Self-Hosted Guarantee:&#xa;Every resource provisioned in the INSTITUTION&#39;S own AWS account.&#xa;CampusIQ has zero visibility into any deployment.&#xa;Institution chooses region — EU institutions use eu-west-1 for GDPR." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;align=left;fontSize=11;fontStyle=2;" vertex="1" parent="1">
-          <mxGeometry x="60" y="760" width="600" height="60" as="geometry" />
+        <mxCell id="residencyNote" value="🏛️ Self-Hosted: Every resource in the INSTITUTION&#39;S own AWS account. Institution chooses region. CampusIQ has zero visibility." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;align=left;fontSize=11;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="60" y="760" width="600" height="50" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
