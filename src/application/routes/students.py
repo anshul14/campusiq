@@ -48,7 +48,7 @@ def _map_progress_to_response(
 
 @router.get("/me", response_model=StudentProfileResponse)
 async def get_my_profile(request: Request):
-    user_id = request.state.authorizer["sub"]
+    user_id = request.state.authorizer["userId"]
     item = db.get_student_profile(user_id)
     if not item:
         raise HTTPException(status_code=404, detail="Profile not found")
@@ -74,7 +74,7 @@ async def list_my_courses(
 
     Pagination: pass next_cursor from the response as cursor in the next request.
     """
-    user_id = request.state.authorizer["sub"]
+    user_id = request.state.authorizer["userId"]
 
     result = db.list_student_enrolments(
         user_id=user_id,
@@ -111,7 +111,7 @@ async def upsert_module_progress(
     Subsequent calls update progress_pct, status, updated_at only.
     Returns the full updated record via ReturnValues=ALL_NEW.
     """
-    user_id = request.state.authorizer["sub"]
+    user_id = request.state.authorizer["userId"]
 
     item = db.upsert_module_progress(
         user_id=user_id,

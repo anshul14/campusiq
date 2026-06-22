@@ -513,63 +513,7 @@ async def get_bedrock_kb_ingestion_status_for_module(
     pass
 
 
-# Quiz
 
-@router.get("/{course_id}/modules/{module_id}/quiz", response_model=QuizDefinitionResponse)
-async def get_quiz_definition(
-        course_id: str,
-        module_id: str,
-        request: Request
-) -> QuizDefinitionResponse:
-    pass
-
-
-@router.post("/{course_id}/modules/{module_id}/quiz/generate", response_model=GenerateQuizResponse)
-async def generate_quiz(
-        course_id: str,
-        module_id: str,
-        request: Request,
-        body: GenerateQuizRequest,
-) -> GenerateQuizResponse:
-    pass
-
-
-@router.put("/{course_id}/modules/{module_id}/quiz", response_model=SaveQuizResponse)
-async def save_quiz_result(
-        course_id: str,
-        module_id: str,
-        body: SaveQuizRequest,
-        request: Request,
-) -> SaveQuizResponse:
-    pass
-
-
-@router.get("/{course_id}/modules/{module_id}/quiz/attempt", response_model=QuizAttemptResponse)
-async def get_quiz_attempt(
-        course_id: str,
-        module_id: str,
-        request: Request,
-) -> QuizAttemptResponse:
-    pass
-
-
-@router.post("/{course_id}/modules/{module_id}/quiz/submit", response_model=SubmitQuizResponse)
-async def submit_quiz_attempt(
-        course_id: str,
-        module_id: str,
-        request: Request,
-        body: SubmitQuizRequest,
-) -> SubmitQuizResponse:
-    pass
-
-
-@router.get("/{course_id}/modules/{module_id}/quiz/results", response_model=CourseQuizResultsResponse)
-async def get_course_quiz_results(
-        course_id: str,
-        module_id: str,
-        request: Request,
-) -> CourseQuizResultsResponse:
-    pass
 
 
 # Content Upload

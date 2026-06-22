@@ -12,7 +12,7 @@ DynamoDB utility methods
 import base64
 import json
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from decimal import Decimal
 from typing import Optional
 
@@ -628,3 +628,93 @@ def upsert_module_progress(
 
     # response["Attributes"] contains the full updated item
     return response["Attributes"]
+
+
+def get_quiz_for_module(
+        course_id: str,
+        module_id: str,
+) -> dict:
+    """
+    Retrieve the quiz for a given module.
+    Key:
+        PK = COURSE#{course_id}
+        SK = QUIZ#{module_id}
+    :param course_id:
+    :param module_id:
+    :return:
+    """
+    response = table.get_item(
+        Key={
+            "PK": f"COURSE#{course_id}",
+            "SK": f"QUIZ#{module_id}",
+        }
+    )
+    item = response.get("Item")  # None if not found
+    if item is None:
+        return None
+
+    return item
+
+
+# ------------------------------------------------------------------
+# Get quiz attempt counts for the student
+# ------------------------------------------------------------------
+def count_quiz_attempts(user_id, course_id, module_id) -> int:
+    """
+    Count the number of quiz attempts for a student + course + module combination.
+    Key:
+        PK = STUDENT#{user_id}
+        SK begins_with RESULT#{courseId}#{moduleId}#
+
+    :param user_id:
+    :param course_id:
+    :param module_id:
+    :return:
+    """
+    kwargs = {
+        "KeyConditionExpression": (
+                Key("PK").eq(f"STUDENT#{user_id}")
+                & Key("SK").begins_with(f"RESULT#{course_id}#{module_id}#")
+        ),
+        "Select": "COUNT",
+    }
+    response = table.query(**kwargs)
+    return response["Count"]
+
+
+def write_quiz_result(user_id, course_id, module_id, attempt_id,
+                      score_pct, passed, concept_scores, quiz_id,
+                      time_taken_seconds, answers, submitted_at):
+    try:
+        ttl = int((datetime.now(timezone.utc) + timedelta(days=730)).timestamp())
+        table.put_item(
+            Item={
+                "PK": f"STUDENT#{user_id}",
+                "SK": f"RESULT#{course_id}#{module_id}#{attempt_id}",
+                "course_id": course_id,
+                "module_id": module_id,
+                "quiz_id": quiz_id,
+                "score_pct": Decimal(str(score_pct)),
+                "passed": passed,
+                "concept_scores": {
+                    concept: Decimal(str(score))
+                    for concept, score in concept_scores.items()
+                },
+                "time_taken_seconds": time_taken_seconds,
+                "answers": answers,
+                "entity_type": "QUIZ_RESULT",
+                "submitted_at": submitted_at,
+                "created_at": submitted_at,
+                "updated_at": submitted_at,
+                "ttl": ttl,
+                "GSI1_PK": f"COURSE#{course_id}",
+                "GSI1_SK": f"RESULT#{user_id}#{module_id}#{attempt_id}",
+            }
+        )
+    except ClientError as e:
+        error_code = e.response["Error"]["Code"]
+        logger.error("DynamoDB put_item failed", extra={
+            "error_code": error_code,
+            "course_id": course_id,
+        })
+        raise e
