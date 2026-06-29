@@ -7,7 +7,6 @@
 #     http://www.apache.org/licenses/LICENSE-2.0
 
 
-
 # infrastructure/cdk/stacks/auth_stack.py
 #
 # Provisions the CampusIQ Cognito User Pool for one institution deployment.
@@ -206,19 +205,6 @@ class AuthStack(Stack):
             )
 
         # ------------------------------------------------------------------
-        # IdP Federation
-        # Wired based on config["idp"]["type"]
-        # Credentials (client_id, client_secret, metadata_url) come from
-        # SSM Parameter Store — never hardcoded in CDK or config files.
-        # ------------------------------------------------------------------
-        if idp_type == "ENTRA_ID":
-            self._add_entra_idp()
-        elif idp_type == "GOOGLE":
-            self._add_google_idp()
-        elif idp_type == "SAML":
-            self._add_saml_idp()
-
-        # ------------------------------------------------------------------
         # App Client — NextAuth.js uses this
         # Authorization Code Grant flow — no implicit flow (security best practice)
         # ------------------------------------------------------------------
@@ -262,6 +248,18 @@ class AuthStack(Stack):
             # No client secret for public SPA clients
             generate_secret=False,
         )
+        # ------------------------------------------------------------------
+        # IdP Federation
+        # Wired based on config["idp"]["type"]
+        # Credentials (client_id, client_secret, metadata_url) come from
+        # SSM Parameter Store — never hardcoded in CDK or config files.
+        # ------------------------------------------------------------------
+        if idp_type == "ENTRA_ID":
+            self._add_entra_idp()
+        elif idp_type == "GOOGLE":
+            self._add_google_idp()
+        elif idp_type == "SAML":
+            self._add_saml_idp()
 
         # ------------------------------------------------------------------
         # Cognito Domain — needed for Hosted UI

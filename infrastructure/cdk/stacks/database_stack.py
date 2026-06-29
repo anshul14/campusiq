@@ -6,7 +6,6 @@
 #
 # Outputs table name and ARN as CfnOutput — consumed by compute_stack.py
 
-import aws_cdk as cdk
 from aws_cdk import (
     Stack,
     aws_dynamodb as dynamodb,
@@ -26,11 +25,11 @@ class DatabaseStack(Stack):
     """
 
     def __init__(
-        self,
-        scope: Construct,
-        construct_id: str,
-        deployment_name: str,       # from campusiq.config.json — e.g. "dev", "prod"
-        **kwargs,
+            self,
+            scope: Construct,
+            construct_id: str,
+            deployment_name: str,  # from campusiq.config.json — e.g. "dev", "prod"
+            **kwargs,
     ) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
@@ -53,8 +52,10 @@ class DatabaseStack(Stack):
             ),
             billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,  # on-demand — no capacity planning
             stream=dynamodb.StreamViewType.NEW_AND_OLD_IMAGES,  # Cognitive Loop trigger
-            point_in_time_recovery=True,                         # production safety
-            removal_policy=RemovalPolicy.RETAIN,                 # never destroy on cdk destroy
+            point_in_time_recovery_specification=dynamodb.PointInTimeRecoverySpecification(
+                point_in_time_recovery_enabled=True
+            ),  # production safety
+            removal_policy=RemovalPolicy.RETAIN,  # never destroy on cdk destroy
         )
 
         # ------------------------------------------------------------------
