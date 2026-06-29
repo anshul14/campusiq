@@ -7,7 +7,6 @@
 #     http://www.apache.org/licenses/LICENSE-2.0
 
 
-
 # infrastructure/cdk/stacks/compute_stack.py
 #
 # Provisions all CampusIQ Lambda functions, API Gateway, and EventBridge.
@@ -20,6 +19,7 @@
 #   Event-driven:       Stream Processor, Gap Detection, Recommendation, Content Adaptation
 
 import os
+
 import aws_cdk as cdk
 from aws_cdk import (
     Stack,
@@ -53,13 +53,13 @@ class ComputeStack(Stack):
     """
 
     def __init__(
-        self,
-        scope: Construct,
-        construct_id: str,
-        deployment_name: str,
-        table: dynamodb.Table,
-        config: dict,
-        **kwargs,
+            self,
+            scope: Construct,
+            construct_id: str,
+            deployment_name: str,
+            table: dynamodb.Table,
+            config: dict,
+            **kwargs,
     ) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
@@ -71,11 +71,11 @@ class ComputeStack(Stack):
         # Shared environment variables — injected into every Lambda
         # ------------------------------------------------------------------
         self.shared_env = {
-            "DYNAMODB_TABLE_NAME":      table.table_name,
-            "ALLOWED_ORIGINS":          config["domain"].get("allowed_origins", "http://localhost:3000"),
-            "POWERTOOLS_SERVICE_NAME":  f"campusiq-{deployment_name}",
-            "LOG_LEVEL":                "DEBUG" if "dev" in deployment_name else "INFO",
-            "DEPLOYMENT_NAME":          deployment_name,
+            "DYNAMODB_TABLE_NAME": table.table_name,
+            "ALLOWED_ORIGINS": config["domain"].get("allowed_origins", "http://localhost:3000"),
+            "POWERTOOLS_SERVICE_NAME": f"campusiq-{deployment_name}",
+            "LOG_LEVEL": "DEBUG" if "dev" in deployment_name else "INFO",
+            "DEPLOYMENT_NAME": deployment_name,
         }
 
         # ------------------------------------------------------------------
@@ -124,6 +124,7 @@ class ComputeStack(Stack):
                     # Use the official AWS Lambda Python 3.12 build image
                     # Ensures packages are compiled for the Lambda execution environment
                     image=lambda_.Runtime.PYTHON_3_12.bundling_image,
+                    platform="linux/amd64",
                     command=[
                         "bash", "-c",
                         " && ".join([
@@ -132,7 +133,9 @@ class ComputeStack(Stack):
                             "fastapi==0.115.0 "
                             "mangum==0.19.0 "
                             "pydantic==2.7.0 "
+                            "'pydantic[email]==2.7.0' "
                             "aws-lambda-powertools==3.3.0 "
+                            "python-jose[cryptography]==3.3.0 "
                             "--target /asset-output/python/lib/python3.12/site-packages "
                             "--no-cache-dir "
                             "--quiet",
@@ -155,7 +158,6 @@ class ComputeStack(Stack):
     # ======================================================================
 
     def _build_http_lambdas(self):
-
         # ------------------------------------------------------------------
         # Courses Lambda
         # Routes: GET/POST /courses, PATCH/DELETE /courses/{id},
@@ -198,7 +200,7 @@ class ComputeStack(Stack):
             memory=1024,
             timeout=30,
             extra_env={
-                "TUTOR_AGENT_ID":       self.node.try_get_context("tutor_agent_id") or "REPLACE_WITH_AGENT_ID",
+                "TUTOR_AGENT_ID": self.node.try_get_context("tutor_agent_id") or "REPLACE_WITH_AGENT_ID",
                 "TUTOR_AGENT_ALIAS_ID": self.node.try_get_context("tutor_agent_alias_id") or "REPLACE_WITH_ALIAS_ID",
             },
         )
@@ -267,7 +269,6 @@ class ComputeStack(Stack):
     # ======================================================================
 
     def _build_event_driven_lambdas(self):
-
         # ------------------------------------------------------------------
         # Stream Processor Lambda
         # Trigger: DynamoDB Streams (NEW_AND_OLD_IMAGES)
@@ -340,7 +341,8 @@ class ComputeStack(Stack):
             memory=512,
             timeout=60,
             extra_env={
-                "PERSONALIZE_CAMPAIGN_ARN": self.node.try_get_context("personalize_campaign_arn") or "REPLACE_WITH_CAMPAIGN_ARN",
+                "PERSONALIZE_CAMPAIGN_ARN": self.node.try_get_context(
+                    "personalize_campaign_arn") or "REPLACE_WITH_CAMPAIGN_ARN",
             },
         )
         self.table.grant_read_write_data(self.recommendation_lambda)
@@ -392,21 +394,26 @@ class ComputeStack(Stack):
     # ======================================================================
 
     def _build_api_gateway(self):
-
         # ------------------------------------------------------------------
         # Lambda Authorizer
         # Validates Cognito JWT + enforces RBAC on every request
         # Cached for 300s — cache key is the Authorization header value
         # ------------------------------------------------------------------
-        authorizer_lambda = self._event_lambda(
-            name="LambdaAuthorizer",
-            entry="src/application/lambdas/authorizer",
-            memory=256,
-            timeout=10,
-            extra_env={
-                "COGNITO_USER_POOL_ID":  self.node.try_get_context("cognito_user_pool_id") or "REPLACE_WITH_POOL_ID",
-                "COGNITO_CLIENT_ID":     self.node.try_get_context("cognito_client_id") or "REPLACE_WITH_CLIENT_ID",
-                "COGNITO_REGION":        self.region,
+        authorizer_lambda = lambda_.Function(
+            self,
+            "LambdaAuthorizerLambda",
+            function_name=f"campusiq-{self.deployment_name}-lambdaauthorizer",
+            code=lambda_.Code.from_asset(os.path.join(REPO_ROOT, "src")),
+            handler="application.lambdas.authorizer.handler.handler",
+            runtime=lambda_.Runtime.PYTHON_3_12,
+            memory_size=256,
+            timeout=Duration.seconds(10),
+            layers=[self.deps_layer],
+            environment={
+                **self.shared_env,
+                "COGNITO_USER_POOL_ID": "us-east-1_FVyLEJSdV",
+                "COGNITO_CLIENT_ID": "3skm6s2hd2arn9t10fns1ikr5t",
+                "COGNITO_REGION": self.region,
             },
         )
 
@@ -486,7 +493,6 @@ class ComputeStack(Stack):
     # ======================================================================
 
     def _wire_eventbridge_rules(self):
-
         # QuizCompleted → Gap Detection Lambda
         events.Rule(
             self,
@@ -537,12 +543,12 @@ class ComputeStack(Stack):
     # ======================================================================
 
     def _http_lambda(
-        self,
-        name: str,
-        entry: str,
-        memory: int,
-        timeout: int,
-        extra_env: dict,
+            self,
+            name: str,
+            entry: str,
+            memory: int,
+            timeout: int,
+            extra_env: dict,
     ) -> lambda_.Function:
         """
         HTTP Lambda — FastAPI + Mangum.
@@ -558,7 +564,7 @@ class ComputeStack(Stack):
         Handler string format: {module_path}.{function}
         With src/ as the asset root: application.lambdas.courses.main.handler
         """
-        module_path = entry.replace("src/", "").replace("/", ".") + ".handler"
+        module_path = entry.replace("src/", "").replace("/", ".") + ".main.handler"
 
         return lambda_.Function(
             self,
@@ -576,12 +582,12 @@ class ComputeStack(Stack):
         )
 
     def _event_lambda(
-        self,
-        name: str,
-        entry: str,
-        memory: int,
-        timeout: int,
-        extra_env: dict,
+            self,
+            name: str,
+            entry: str,
+            memory: int,
+            timeout: int,
+            extra_env: dict,
     ) -> lambda_.Function:
         """
         Event-driven Lambda — plain handler function, no FastAPI.
@@ -591,7 +597,7 @@ class ComputeStack(Stack):
 
         Handler string format: application.lambdas.stream_processor.handler.handler
         """
-        module_path = entry.replace("src/", "").replace("/", ".") + ".handler"
+        module_path = entry.replace("src/", "").replace("/", ".") + ".handler.handler"
 
         return lambda_.Function(
             self,

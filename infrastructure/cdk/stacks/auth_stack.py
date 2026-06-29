@@ -221,9 +221,9 @@ class AuthStack(Stack):
 
             # Authorization Code Grant only — no implicit, no client credentials
             auth_flows=cognito.AuthFlow(
-                user_password=False,
-                user_srp=False,
-                admin_user_password=False,
+                user_password=True,  # enables USER_PASSWORD_AUTH for testing
+                user_srp=True,  # enables USER_SRP_AUTH (more secure, used by Amplify)
+                admin_user_password=True,  # enables ADMIN_USER_PASSWORD_AUTH for CLI testing
             ),
             o_auth=cognito.OAuthSettings(
                 flows=cognito.OAuthFlows(authorization_code_grant=True),
@@ -331,6 +331,11 @@ class AuthStack(Stack):
             /campusiq/{deployment_name}/idp/entra/client_secret
         These are set manually after CDK deploy — never hardcoded.
         """
+        tenant_id = self.node.try_get_context("entra_tenant_id")
+        if not tenant_id:
+            print("Skipping Entra IdP — entra_tenant_id not provided. "
+                  "Pass via: cdk deploy --context entra_tenant_id=YOUR_TENANT_ID")
+            return
         entra_idp = cognito.UserPoolIdentityProviderOidc(
             self,
             "EntraIdP",
@@ -364,6 +369,11 @@ class AuthStack(Stack):
             /campusiq/{deployment_name}/idp/google/client_id
             /campusiq/{deployment_name}/idp/google/client_secret
         """
+        client_id = self.node.try_get_context("google_client_id")
+        if not client_id:
+            print("Skipping Google IdP — google_client_id not provided. "
+                  "Pass via: cdk deploy --context google_client_id=YOUR_CLIENT_ID")
+            return
         google_idp = cognito.UserPoolIdentityProviderGoogle(
             self,
             "GoogleIdP",
@@ -390,6 +400,11 @@ class AuthStack(Stack):
         Metadata URL in SSM Parameter Store:
             /campusiq/{deployment_name}/idp/saml/metadata_url
         """
+        metadata_url = self.node.try_get_context("saml_metadata_url")
+        if not metadata_url:
+            print("Skipping SAML IdP — saml_metadata_url not provided. "
+                  "Pass via: cdk deploy --context saml_metadata_url=YOUR_METADATA_URL")
+            return
         saml_idp = cognito.UserPoolIdentityProviderSaml(
             self,
             "SamlIdP",

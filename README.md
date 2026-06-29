@@ -119,14 +119,94 @@ source .venv/bin/activate
 pip install -r requirements.txt
 
 # Synthesise CloudFormation templates (validates CDK code)
-cdk synth
+make synth
 
 # Deploy all stacks
-cdk deploy --all
+make deploy 
 ```
 
 > Note: Docker must be running during deploy — CDK uses it to bundle Lambda dependencies.
 
+### Post-Deploy Configuration
+
+After `cdk deploy --all` completes, grab the stack outputs:
+
+```bash
+aws cloudformation describe-stacks \
+  --stack-name CampusIQ-{institution}-{environment}-Compute \
+  --query "Stacks[0].Outputs"
+```
+
+#### 1. Configure IdP Credentials
+
+Add your identity provider credentials to SSM Parameter Store.
+These are never stored in code or config files.
+
+**Microsoft Entra ID:**
+```bash
+aws ssm put-parameter \
+  --name /campusiq/{institution}-{environment}/idp/entra/client_id \
+  --value YOUR_ENTRA_CLIENT_ID \
+  --type SecureString
+
+aws ssm put-parameter \
+  --name /campusiq/{institution}-{environment}/idp/entra/client_secret \
+  --value YOUR_ENTRA_CLIENT_SECRET \
+  --type SecureString
+```
+
+**Google Workspace:**
+```bash
+aws ssm put-parameter \
+  --name /campusiq/{institution}-{environment}/idp/google/client_id \
+  --value YOUR_GOOGLE_CLIENT_ID \
+  --type SecureString
+
+aws ssm put-parameter \
+  --name /campusiq/{institution}-{environment}/idp/google/client_secret \
+  --value YOUR_GOOGLE_CLIENT_SECRET \
+  --type SecureString
+```
+
+**SAML 2.0:**
+```bash
+aws ssm put-parameter \
+  --name /campusiq/{institution}-{environment}/idp/saml/metadata_url \
+  --value YOUR_SAML_METADATA_URL \
+  --type String
+```
+
+#### 2. Update Callback URLs
+
+Add the API Gateway URL from the Compute stack output to `campusiq.config.json`:
+
+```json
+{
+  "deployment": {
+    "name": "your-institution",
+    "region": "us-east-1",
+    "account": "YOUR_AWS_ACCOUNT_ID",
+    "environment": "dev",
+    "callback_url": "https://YOUR_NEXTJS_DOMAIN/api/auth/callback/cognito",
+    "logout_url": "https://YOUR_NEXTJS_DOMAIN"
+  }
+}
+```
+
+Then redeploy the Auth stack to apply the callback URLs:
+
+```bash
+cdk deploy CampusIQ-{institution}-{environment}-Auth
+```
+
+#### 3. Set a Billing Alert (recommended)
+
+```bash
+aws budgets create-budget \
+  --account-id YOUR_ACCOUNT_ID \
+  --budget '{"BudgetName":"CampusIQ-Monthly","BudgetLimit":{"Amount":"20","Unit":"USD"},"TimeUnit":"MONTHLY","BudgetType":"COST"}' \
+  --notifications-with-subscribers '[{"Notification":{"NotificationType":"ACTUAL","ComparisonOperator":"GREATER_THAN","Threshold":80},"Subscribers":[{"SubscriptionType":"EMAIL","Address":"YOUR_EMAIL"}]}]'
+```
 ###  Project structure
 
 - **src/application**: Main application code

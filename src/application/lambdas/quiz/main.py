@@ -24,7 +24,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from mangum import Mangum
 
 from application.routes.quiz import router as quiz_router
-
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
 app = FastAPI(
     title="CampusIQ Quiz API",
     description="Quiz results, create, delete",
@@ -40,6 +41,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(quiz_router, prefix="")
+app.include_router(quiz_router)
 
-handler = Mangum(app)
+class AuthorizerMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        # Inject API Gateway authorizer context into request.state
+        event = request.scope.get("aws.event", {})
+        authorizer = event.get("requestContext", {}).get("authorizer", {})
+        request.state.authorizer = authorizer
+        return await call_next(request)
+
+app.add_middleware(AuthorizerMiddleware)
+
+handler = Mangum(app, lifespan="off")

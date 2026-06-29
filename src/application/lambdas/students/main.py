@@ -28,7 +28,8 @@ from mangum import Mangum
 import os
 
 from application.routes.students import router as students_router
-
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
 app = FastAPI(
     title="CampusIQ Students API",
     description="Student profile, progress, gaps, and learning path",
@@ -45,6 +46,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(students_router, prefix="/api/v1")
+app.include_router(students_router)
 
-handler = Mangum(app)
+class AuthorizerMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        # Inject API Gateway authorizer context into request.state
+        event = request.scope.get("aws.event", {})
+        authorizer = event.get("requestContext", {}).get("authorizer", {})
+        request.state.authorizer = authorizer
+        return await call_next(request)
+
+app.add_middleware(AuthorizerMiddleware)
+
+handler = Mangum(app, lifespan="off")

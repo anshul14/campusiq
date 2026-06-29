@@ -28,6 +28,10 @@ import os
 
 from application.routes.parent import router as parent_router
 
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
+
+
 app = FastAPI(
     title="CampusIQ Parent API",
     description="Parent portal — K-12 child progress (read-only)",
@@ -44,6 +48,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(parent_router, prefix="/api/v1")
 
-handler = Mangum(app)
+app.include_router(parent_router)
+
+class AuthorizerMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        # Inject API Gateway authorizer context into request.state
+        event = request.scope.get("aws.event", {})
+        authorizer = event.get("requestContext", {}).get("authorizer", {})
+        request.state.authorizer = authorizer
+        return await call_next(request)
+
+app.add_middleware(AuthorizerMiddleware)
+
+handler = Mangum(app, lifespan="off")
