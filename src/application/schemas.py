@@ -21,7 +21,7 @@ Organisation:
   Shared/nested models have no suffix.
 
 Usage:
-    from src.application.schemas import (
+    from application.schemas import (
         CreateCourseRequest,
         CourseResponse,
         SubmitQuizRequest,

@@ -27,7 +27,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from mangum import Mangum
-from src.application.routes.admin import router as admin_router
+from application.routes.admin import router as admin_router
 
 logger = logging.getLogger(__name__)
 

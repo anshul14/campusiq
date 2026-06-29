@@ -17,7 +17,7 @@ import logging
 
 from fastapi import APIRouter, Request
 
-from src.application.schemas import ParentChildrenResponse, ChildProgressResponse
+from application.schemas import ParentChildrenResponse, ChildProgressResponse
 
 logger = logging.getLogger(__name__)
 

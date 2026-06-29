@@ -12,8 +12,8 @@ This is the centralized class from where all the DynamoDB entity dataclasses and
 can be exported throughout the application
 
 Usage:
-    from src.application.models import Course, Module, StudentProfile
-    from src.application.models import dynamodb_keys as keys
+    from application.models import Course, Module, StudentProfile
+    from application.models import dynamodb_keys as keys
 """
 
 from .course   import Course, Module, CourseStatus, CMSSource, ContentType, IngestionStatus
@@ -23,7 +23,7 @@ from .quiz     import QuizDefinition, QuizResult, QuizQuestion, QuizAnswer, Quiz
 from .gap      import KnowledgeGap, LearningPath
 from .parent   import ParentChildLink, LinkStatus
 from .config   import CMSPluginConfig, DomainConfig, IngestionManifest
-from src.application.utils import dynamodb_keys
+from application.utils import dynamodb_keys
 
 __all__ = [
     # Course

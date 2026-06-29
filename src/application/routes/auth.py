@@ -22,7 +22,7 @@ import logging
 
 from fastapi import APIRouter, Request, HTTPException, status
 
-from src.application.schemas import SessionResponse, SessionUser, ErrorResponse
+from application.schemas import SessionResponse, SessionUser, ErrorResponse
 
 logger = logging.getLogger(__name__)
 

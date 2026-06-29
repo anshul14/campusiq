@@ -17,7 +17,7 @@ import logging
 
 from fastapi import APIRouter, Request
 
-from src.application.schemas import TeacherCoursesResponse
+from application.schemas import TeacherCoursesResponse
 
 router = APIRouter(
     prefix="/teachers",

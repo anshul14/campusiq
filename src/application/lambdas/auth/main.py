@@ -23,7 +23,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from mangum import Mangum
 import os
 
-from src.application.routes.auth import router as auth_router
+from application.routes.auth import router as auth_router
 
 app = FastAPI(
     title="CampusIQ Auth API",

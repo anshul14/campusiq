@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
 
-from src.application.models import dynamodb_keys as keys
+from application.models import dynamodb_keys as keys
 
 
 class ProgressStatus(str, Enum):

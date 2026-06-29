@@ -18,7 +18,7 @@ import src.application.services.bedrock as bedrock
 from fastapi import APIRouter, Request
 from fastapi.responses import StreamingResponse
 
-from src.application.schemas import TutorHistoryResponse, TutorChatRequest, TutorChatResponse
+from application.schemas import TutorHistoryResponse, TutorChatRequest, TutorChatResponse
 
 logger = logging.getLogger(__name__)
 

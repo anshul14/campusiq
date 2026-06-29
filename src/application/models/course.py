@@ -16,7 +16,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Optional
 from enum import Enum
-from src.application.models import dynamodb_keys as keys
+from application.models import dynamodb_keys as keys
 
 
 class CourseStatus(str, Enum):

@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Optional
 
-from src.application.models import dynamodb_keys as keys
+from application.models import dynamodb_keys as keys
 
 
 class QuestionType(str, Enum):

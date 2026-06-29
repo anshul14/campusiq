@@ -1,8 +1,18 @@
+# Copyright 2026 Anshul Saxena
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+
+
 from typing import Optional
 from fastapi import APIRouter, Query, Request, HTTPException
 from decimal import Decimal
-from src.application.services import dynamodb as db
-from src.application.schemas import (
+from application.services import dynamodb as db
+from application.schemas import (
     EnrolmentListResponse,
     EnrolmentResponse,
     ProgressUpsertRequest,

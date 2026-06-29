@@ -23,7 +23,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from mangum import Mangum
 
-from src.application.routes.quiz import router as quiz_router
+from application.routes.quiz import router as quiz_router
 
 app = FastAPI(
     title="CampusIQ Quiz API",

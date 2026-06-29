@@ -718,3 +718,30 @@ def write_quiz_result(user_id, course_id, module_id, attempt_id,
             "course_id": course_id,
         })
         raise e
+
+
+def create_student_profile_if_not_exists(user_id, email, name, grade, idp_provider, institution_id, entity_type,
+                                         created_at):
+    response = table.update_item(
+        Key={
+            "PK": f"STUDENT#{user_id}",
+            "SK": "PROFILE"
+        },
+        UpdateExpression=(
+            "SET email = :e, #n = :n, grade = :g, "
+            "idp_provider = :idp, institution_id = :inst, "
+            "entity_type = if_not_exists(entity_type, :et), "
+            "created_at = if_not_exists(created_at, :ca)"
+        ),
+        ExpressionAttributeNames={"#n": "name"},  # name is a reserved word
+        ExpressionAttributeValues={
+            ":e": email,
+            ":n": name,
+            ":g": grade,
+            ":idp": idp_provider,
+            ":inst": institution_id,
+            ":et": "STUDENT",
+            ":ca": created_at,
+        },
+        ReturnValues="NONE",
+    )

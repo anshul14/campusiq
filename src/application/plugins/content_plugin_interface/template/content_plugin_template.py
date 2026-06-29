@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from src.application.plugins.content_plugin_interface.base import (
+from application.plugins.content_plugin_interface.base import (
     ContentPluginInterface, CPIRequest, CPIContent
 )
 

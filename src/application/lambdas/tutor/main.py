@@ -26,7 +26,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from mangum import Mangum
 import os
 
-from src.application.routes.tutor import router as tutor_router
+from application.routes.tutor import router as tutor_router
 
 app = FastAPI(
     title="CampusIQ Tutor API",

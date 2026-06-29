@@ -17,7 +17,7 @@ import logging
 
 from fastapi import APIRouter, Request
 
-from src.application.schemas import UserListResponse, ChangeRoleRequest, ChangeRoleResponse, AssignTeacherResponse, \
+from application.schemas import UserListResponse, ChangeRoleRequest, ChangeRoleResponse, AssignTeacherResponse, \
     AssignTeacherRequest, CMSPluginConfigResponse, UpdateCMSPluginRequest, DomainConfigResponse, \
     UpdateDomainConfigRequest, TriggerSyncResponse, SyncJobStatusResponse, TriggerSyncRequest, CreateParentLinkRequest, \
     CreateParentLinkResponse

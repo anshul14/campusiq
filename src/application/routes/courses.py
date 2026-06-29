@@ -19,7 +19,7 @@ from uuid import uuid4
 
 from fastapi import APIRouter, Request, HTTPException
 
-from src.application.schemas import CourseResponse, CourseListResponse, UpdateCourseResponse, \
+from application.schemas import CourseResponse, CourseListResponse, UpdateCourseResponse, \
     CreateCourseResponse, CreateCourseRequest, UpdateCourseRequest, ModuleListResponse, ModuleResponse, \
     CreateModuleRequest, CreateModuleResponse, UpdateModuleRequest, UpdateModuleResponse, CourseStudentListResponse, \
     EnrolStudentsRequest, EnrolStudentsResponse, CourseProgressResponse, QuizDefinitionResponse, GenerateQuizResponse, \
@@ -27,8 +27,8 @@ from src.application.schemas import CourseResponse, CourseListResponse, UpdateCo
     CourseQuizResultsResponse, CourseGapsResponse, DashboardResponse, AtRiskResponse, IngestionStatusResponse, \
     ContentPresignResponse, ContentPresignRequest, ContentCompleteResponse, ContentCompleteRequest, \
     SaveTextContentResponse, SaveTextContentRequest, CourseStatusEnum, ModuleSummary
-from src.application.schemas import CourseSummary
-from src.application.services import dynamodb as db
+from application.schemas import CourseSummary
+from application.services import dynamodb as db
 
 logger = logging.getLogger(__name__)
 

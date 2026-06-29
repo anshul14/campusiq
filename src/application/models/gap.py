@@ -11,7 +11,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional
 
-from src.application.models import dynamodb_keys as keys
+from application.models import dynamodb_keys as keys
 
 
 @dataclass

@@ -37,7 +37,7 @@ import os
 # Assessment routes are part of the quiz router
 # This Lambda only handles the /quiz/generate route
 # In Phase 3 this will be refactored to a dedicated quiz_generate router
-from src.application.routes.courses import router as courses_router
+from application.routes.courses import router as courses_router
 
 app = FastAPI(
     title="CampusIQ Assessment API",
