@@ -59,7 +59,9 @@ Its pluggable CMS layer allows different institutions to plug in their existing 
 
 ## Technology Stack
 
-- **Backend Framework**: FastAPI, Python, Strands (Amazon Strands Agents SDK for agent orchestration)
+- **Backend Framework**: FastAPI, Python
+- **Agent Runtime**: Amazon Bedrock AgentCore
+- **Infrastructure**: AWS CDK (Python)
 - **Dependency Management**: Poetry
 
 ### Prerequisites
@@ -103,15 +105,27 @@ cp campusiq.config.example.json campusiq.config.json
 ```
 
 #### Deploy
+
 ```bash
 # Configure AWS credentials first
 aws configure
 # or using a named profile
 export AWS_PROFILE=your-profile
 
-# Deploy
-cdk deploy
+# Install CDK dependencies
+cd infrastructure/cdk
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+
+# Synthesise CloudFormation templates (validates CDK code)
+cdk synth
+
+# Deploy all stacks
+cdk deploy --all
 ```
+
+> Note: Docker must be running during deploy — CDK uses it to bundle Lambda dependencies.
 
 ###  Project structure
 
