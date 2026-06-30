@@ -34,8 +34,9 @@ def handler(event, context):
             idp_provider=user_attributes.get("custom:idpProvider", ""),
             institution_id=user_attributes.get("custom:institutionId", ""),
             entity_type="STUDENT",
-            created_at=datetime.now(timezone.utc).isoformat()
-
+            created_at=datetime.now(timezone.utc).isoformat(),
+            student_id=event["userName"],
+            enrollment_status="active",
         )
     except Exception as e:
         logger.error(f"Failed to create profile for {event['userName']}", extra={"error": str(e)})

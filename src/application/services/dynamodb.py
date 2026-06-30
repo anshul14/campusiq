@@ -500,11 +500,12 @@ def enrol_students(
 def _map_to_student_profile(item: dict) -> dict:
     return {
         "cognito_sub": item["PK"].replace("STUDENT#", ""),
+        "student_id": item.get("student_id", ""),
         "name": item.get("name", ""),
         "email": item.get("email", ""),
         "domain": item.get("domain", ""),
         "grade": item.get("grade", ""),
-        "enrollment_status": item.get("enrollment_status", ""),
+        "enrollment_status": item.get("enrollment_status", "active"),
         "last_active_at": item.get("last_active_at", ""),
     }
 
@@ -721,7 +722,7 @@ def write_quiz_result(user_id, course_id, module_id, attempt_id,
 
 
 def create_student_profile_if_not_exists(user_id, email, name, grade, idp_provider, institution_id, entity_type,
-                                         created_at):
+                                         created_at, student_id: str, enrollment_status: str):
     response = table.update_item(
         Key={
             "PK": f"STUDENT#{user_id}",
@@ -730,6 +731,8 @@ def create_student_profile_if_not_exists(user_id, email, name, grade, idp_provid
         UpdateExpression=(
             "SET email = :e, #n = :n, grade = :g, "
             "idp_provider = :idp, institution_id = :inst, "
+            "student_id = if_not_exists(student_id, :sid), "
+            "enrollment_status = if_not_exists(enrollment_status, :es), "
             "entity_type = if_not_exists(entity_type, :et), "
             "created_at = if_not_exists(created_at, :ca)"
         ),
@@ -742,6 +745,8 @@ def create_student_profile_if_not_exists(user_id, email, name, grade, idp_provid
             ":inst": institution_id,
             ":et": "STUDENT",
             ":ca": created_at,
+            ":sid": user_id,
+            ":es": enrollment_status
         },
         ReturnValues="NONE",
     )

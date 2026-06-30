@@ -7,7 +7,7 @@
 #     http://www.apache.org/licenses/LICENSE-2.0
 
 
-
+import logging
 from typing import Optional
 from fastapi import APIRouter, Query, Request, HTTPException
 from decimal import Decimal
@@ -20,6 +20,7 @@ from application.schemas import (
     StudentProfileResponse,
 )
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/students", tags=["students"])
 
 
@@ -62,6 +63,7 @@ async def get_my_profile(request: Request):
     item = db.get_student_profile(user_id)
     if not item:
         raise HTTPException(status_code=404, detail="Profile not found")
+
     return StudentProfileResponse(**item)
 
 
