@@ -51,7 +51,9 @@ CampusIQ is built on Amazon Web Services (AWS). It comprises 4 layers:
 - **Adaptive experience layer**
 - **Analytics layer**
 
-Its pluggable CMS layer allows different institutions to plug in their existing content management system via the Content Provider Interface that transforms the incoming content into a standardized CampusIQ format before feeding into the AI pipeline. The AI layer - responsible for gap detection, tutoring, and adaptive learning path generation - comprises specialized agents orchestrated by a central orchestrator agent, all running on Amazon Bedrock AgentCore. All infrastructure for CampusIQ is defined as code using AWS CDK and deployable to your own AWS account in a single command. 
+Its pluggable CMS layer allows different institutions to plug in their existing content management system via the Content Provider Interface that transforms the incoming content into a standardized CampusIQ format before feeding into the AI pipeline. 
+The AI layer comprises the Orchestrator and Tutor Agent running in Amazon Bedrock AgentCore, alongside four Lambda functions — Gap Detection, Recommendation, Content Adaptation, and Assessment — that call Bedrock InvokeModel directly. 
+All infrastructure for CampusIQ is defined as code using AWS CDK and deployable to your own AWS account in a single command. 
 
 ![CampusIQ Architecture](docs/architecture/campusiq-architecture.png)
 
