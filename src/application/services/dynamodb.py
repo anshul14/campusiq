@@ -721,6 +721,32 @@ def write_quiz_result(user_id, course_id, module_id, attempt_id,
         raise e
 
 
+def get_latest_quiz_attempt(user_id: str, course_id: str, module_id: str) -> dict | None:
+    """
+    Fetch the most recent quiz attempt for a student + course + module.
+
+    Key:
+        PK = STUDENT#{user_id}
+        SK begins_with RESULT#{course_id}#{module_id}#
+
+    ScanIndexForward=False + Limit=1 returns the latest attempt in one read unit.
+    Timestamp-prefixed attempt_id ensures chronological SK sort.
+
+    Returns:
+        The DynamoDB item dict, or None if no attempts exist.
+    """
+    response = table.query(
+        KeyConditionExpression=(
+                Key("PK").eq(f"STUDENT#{user_id}")
+                & Key("SK").begins_with(f"RESULT#{course_id}#{module_id}#")
+        ),
+        ScanIndexForward=False,
+        Limit=1,
+    )
+    items = response.get("Items", [])
+    return items[0] if items else None
+
+
 def create_student_profile_if_not_exists(user_id, email, name, grade, idp_provider, institution_id, entity_type,
                                          created_at, student_id: str, enrollment_status: str):
     response = table.update_item(
