@@ -522,6 +522,7 @@ class QuizAttemptSummary(BaseModel):
 class StudentQuizResultsResponse(BaseModel):
     """GET /api/v1/students/me/.../quiz/results"""
     attempts: list[QuizAttemptSummary]
+    next_cursor: Optional[str] = None
 
 
 class StudentResultSummary(BaseModel):

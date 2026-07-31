@@ -776,3 +776,47 @@ def create_student_profile_if_not_exists(user_id, email, name, grade, idp_provid
         },
         ReturnValues="NONE",
     )
+
+
+def list_quiz_attempts(
+        user_id: str,
+        course_id: str,
+        module_id: str,
+        cursor: Optional[str] = None,
+        page_size: int = 20,
+) -> dict:
+    """
+    List all quiz attempts for a student + course + module combination.
+
+    Key:
+        PK = STUDENT#{user_id}
+        SK begins_with RESULT#{course_id}#{module_id}#
+
+    ScanIndexForward=False — most recent attempt first.
+    Timestamp-prefixed attempt_id ensures chronological SK sort.
+
+    Returns:
+        { items: [...], next_cursor: str | None }
+    """
+    kwargs = {
+        "KeyConditionExpression": (
+                Key("PK").eq(f"STUDENT#{user_id}")
+                & Key("SK").begins_with(f"RESULT#{course_id}#{module_id}#")
+        ),
+        "ScanIndexForward": False,
+        "Limit": page_size,
+    }
+
+    if cursor:
+        kwargs["ExclusiveStartKey"] = decode_cursor(cursor)
+
+    response = table.query(**kwargs)
+
+    return {
+        "items": response["Items"],
+        "next_cursor": (
+            encode_cursor(response["LastEvaluatedKey"])
+            if "LastEvaluatedKey" in response
+            else None
+        ),
+    }
