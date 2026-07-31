@@ -62,9 +62,7 @@ The AI intelligence layer comprises Orchestrator and Tutor Agent that runs in Am
 The Orchestrator enriches the context with the student's gap summary before sending it to Tutor Agent. The Tutor
 Agent gets this enriched context and uses it to answer any questions - tie up with the previous concepts
 that the student has gap in. The tutor agent always grounds its answers in the actual content which forms the basis
-for Amazon Bedrock Knowledge Base. The AI intelligence layer also has four Lambdas - Gap Detection - responsible for translating the quiz performance into a concept-level
-weakness model for the student , Recommendation - responsible for taking the gap signal and translating it into a concrete learning path, 
-Content Adaptation, Assessment
+for Amazon Bedrock Knowledge Base. It is important to note that only the Orchestrator and Tutor Agent run in Amazon Bedrock AgentCore. The other four components — Gap Detection, Recommendation, Content Adaptation, and Assessment — are AWS Lambda functions that call Bedrock InvokeModel directly. They are event-driven processors, not AgentCore agents.
 
 ### 2.3 Adaptive Delivery Layer
 
@@ -371,10 +369,7 @@ The update triggers another event and if the gap_severity > 0.7, the recommendat
 It reads the student's gap profile from DynamoDB via GSI2, calls Amazon Personalize get_recommendations
 with gap context, and writes updated LearningPath record to DynamoDB with 24hr TTL. 
 
-The Assessment Lambda is triggered via HTTP POST /quiz/generate request when a teacher 
-clicks "Generate Quiz Draft" in the quiz editor. It receives the module content and then calls
-Bedrock InvokeModel and returns structured JSON quiz draft with concept tags on them. The teacher
-reviews, edits, and publishes the draft to make it available to students. 
+The Assessment Lambda serves two distinct purposes. First, it is triggered via HTTP POST /quiz/generate when a teacher clicks "Generate Quiz Draft" in the quiz editor — it receives the module content, calls Bedrock InvokeModel, and returns a structured JSON quiz draft with concept tags that the teacher reviews and publishes. Second, it is triggered when a student retakes a quiz after a failed attempt — instead of returning the same quiz, the Assessment Lambda generates a new quiz targeted at the student's specific weak concepts from their concept_scores, grounded in the module's S3 content. The adaptive quiz is stored under the student's partition (PK=STUDENT#{sub} SK=ADAPTIVEQUIZ#{moduleId}#{attemptId}) so each student gets a unique set of questions and the attempt is preserved for audit.
 
 When a students gap_severity exceeds 0.85 the Content Adaptation Lambda rewrites the module Markdown
 content at a lower difficulty level. This only works on Markdown - PDF and video cannot be adapted. 
@@ -569,8 +564,7 @@ in the institution's own AWS account. This includes a Cognito User
 Pool with IdP federation configured, a DynamoDB table with three
 GSIs and Streams enabled, an S3 bucket with versioning and a
 CloudFront distribution, an API Gateway REST API with Lambda
-Authorizer, all Lambda functions for backend compute, a Bedrock
-Knowledge Base with OpenSearch Serverless as the vector store,
+Authorizer, all Lambda functions for backend compute, a Bedrock Knowledge Base backed by OpenSearch Serverless as the vector store (note: OpenSearch Serverless provisioning is deferred in the default deployment due to its cost floor — the Knowledge Base and Tutor Agent require this to be provisioned before they are fully operational),
 an Amazon Personalize dataset group and event tracker, an
 EventBridge custom event bus for the Cognitive Loop, and
 CloudWatch for structured logging across all components.

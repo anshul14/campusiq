@@ -846,7 +846,7 @@ class ParentChildrenResponse(BaseModel):
 class ChildCourseProgress(BaseModel):
     course_id:      str
     title:          str
-    completion_pct: int
+    completion_pct: float
     last_active_at: Optional[str] = None
 
 
