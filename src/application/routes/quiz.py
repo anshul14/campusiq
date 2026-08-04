@@ -153,13 +153,77 @@ async def generate_quiz(
 
 
 @router.put("/courses/{course_id}/modules/{module_id}/quiz", response_model=SaveQuizResponse)
-async def save_quiz_result(
+async def save_quiz(
         course_id: str,
         module_id: str,
         body: SaveQuizRequest,
         request: Request,
 ) -> SaveQuizResponse:
-    pass
+    """
+    Create or overwrite a quiz definition for a module.
+    Teacher and Admin only. Teacher must be assigned to the course.
+
+    PUT semantics — full replacement on every call.
+    One quiz per module — second save overwrites the first (same DynamoDB key).
+    """
+
+    authorizer_context = request.state.authorizer
+    role = authorizer_context["role"]
+    user_id = authorizer_context["userId"]
+
+    if role not in ("TEACHER", "ADMIN"):
+        raise HTTPException(status_code=403, detail={
+            "code": "FORBIDDEN",
+            "message": "Only teachers and admins can save a quiz"
+        })
+
+    try:
+        # Teachers must be assigned — admins can write to any course
+        if role == "TEACHER":
+            if not db.teacher_is_assigned_to_course(user_id, course_id):
+                raise HTTPException(status_code=403, detail={
+                    "code": "NOT_ASSIGNED",
+                    "message": "You are not assigned to this course"
+                })
+
+        now = datetime.now(timezone.utc).isoformat()
+
+        # Serialize questions — convert Pydantic models to dicts for DynamoDB
+        questions = [q.model_dump() for q in body.questions]
+
+        quiz_id = db.save_quiz(
+            course_id=course_id,
+            module_id=module_id,
+            title=body.title,
+            questions=questions,
+            time_limit_seconds=body.time_limit_seconds,
+            max_attempts=body.max_attempts,
+            passing_score_pct=body.passing_score_pct,
+            randomise_order=body.randomise_order,
+            status=body.status.value,
+            created_by=user_id,
+            now=now,
+        )
+
+        return SaveQuizResponse(
+            quiz_id=quiz_id,
+            status=body.status,
+            updated_at=now,
+        )
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        logger.error("Failed to save quiz", extra={
+            "course_id": course_id,
+            "module_id": module_id,
+            "error": str(e)
+        })
+        raise HTTPException(status_code=500, detail={
+            "code": "QUIZ_SAVE_FAILED",
+            "message": "Failed to save quiz"
+        })
 
 
 @router.get("/courses/{course_id}/modules/{module_id}/quiz/attempt", response_model=QuizAttemptResponse)
@@ -251,10 +315,4 @@ async def get_quiz_attempt(
         })
 
 
-@router.get("/courses/{course_id}/modules/{module_id}/quiz/results", response_model=CourseQuizResultsResponse)
-async def get_course_quiz_results(
-        course_id: str,
-        module_id: str,
-        request: Request,
-) -> CourseQuizResultsResponse:
-    pass
+

@@ -869,3 +869,63 @@ def list_course_quiz_results(
             else None
         ),
     }
+
+def save_quiz(
+        course_id: str,
+        module_id: str,
+        title: str,
+        questions: list,
+        time_limit_seconds: int | None,
+        max_attempts: int,
+        passing_score_pct: int,
+        randomise_order: bool,
+        status: str,
+        created_by: str,
+        now: str,
+) -> str:
+    """
+    Save (create or overwrite) a quiz definition for a course + module.
+
+    Key:
+        PK = COURSE#{course_id}
+        SK = QUIZ#{module_id}
+
+    One quiz per module — put_item naturally overwrites if quiz already exists.
+    quiz_id is deterministic: {courseId}-{moduleId}-quiz — stable across saves.
+
+    Returns:
+        quiz_id
+    """
+    quiz_id = f"{course_id}-{module_id}-quiz"
+
+    try:
+        table.put_item(
+            Item={
+                "PK": f"COURSE#{course_id}",
+                "SK": f"QUIZ#{module_id}",
+                "entity_type": "QUIZ",
+                "quiz_id": quiz_id,
+                "course_id": course_id,
+                "module_id": module_id,
+                "title": title,
+                "questions": questions,
+                "time_limit_seconds": time_limit_seconds,
+                "max_attempts": max_attempts,
+                "passing_score_pct": passing_score_pct,
+                "randomise_order": randomise_order,
+                "status": status,
+                "created_by": created_by,
+                "created_at": now,
+                "updated_at": now,
+            }
+        )
+    except ClientError as e:
+        error_code = e.response["Error"]["Code"]
+        logger.error("DynamoDB save_quiz failed", extra={
+            "error_code": error_code,
+            "course_id": course_id,
+            "module_id": module_id,
+        })
+        raise e
+
+    return quiz_id
