@@ -17,7 +17,7 @@ from fastapi import APIRouter, Request, HTTPException
 
 from application.schemas import SubmitQuizRequest, SubmitQuizResponse, QuizDefinitionResponse, GenerateQuizRequest, \
     GenerateQuizResponse, SaveQuizResponse, SaveQuizRequest, QuizAttemptResponse, CourseQuizResultsResponse, \
-    QuizAnswerResult, QuizQuestionForStudent
+    QuizAnswerResult, QuizQuestionForStudent, QuizQuestionForTeacher
 from application.services import dynamodb as db
 
 logger = logging.getLogger(__name__)
@@ -137,9 +137,69 @@ async def submit_quiz_attempt(
 async def get_quiz_definition(
         course_id: str,
         module_id: str,
-        request: Request
+        request: Request,
 ) -> QuizDefinitionResponse:
-    pass
+    """
+    Fetch the full quiz definition for a module — teacher and admin only.
+    Returns all questions including correct_ids and explanations.
+    Students use GET /quiz/attempt which strips correct_ids via
+    QuizQuestionForStudent model.
+    """
+    authorizer_context = request.state.authorizer
+    role = authorizer_context["role"]
+    user_id = authorizer_context["userId"]
+
+    if role not in ("TEACHER", "ADMIN"):
+        raise HTTPException(status_code=403, detail={
+            "code": "FORBIDDEN",
+            "message": "Only teachers and admins can view the quiz definition"
+        })
+
+    try:
+        # Teachers must be assigned — admins can view any course
+        if role == "TEACHER":
+            if not db.teacher_is_assigned_to_course(user_id, course_id):
+                raise HTTPException(status_code=403, detail={
+                    "code": "NOT_ASSIGNED",
+                    "message": "You are not assigned to this course"
+                })
+
+        quiz = db.get_quiz_for_module(course_id=course_id, module_id=module_id)
+        if quiz is None:
+            raise HTTPException(status_code=404, detail={
+                "code": "QUIZ_NOT_FOUND",
+                "message": "No quiz found for this module"
+            })
+
+        questions = [
+            QuizQuestionForTeacher(**q)
+            for q in quiz.get("questions", [])
+        ]
+
+        return QuizDefinitionResponse(
+            quiz_id=quiz.get("quiz_id", ""),
+            title=quiz.get("title", ""),
+            question_count=len(questions),
+            time_limit_seconds=quiz.get("time_limit_seconds"),
+            max_attempts=int(quiz.get("max_attempts", 2)),
+            passing_score_pct=int(quiz.get("passing_score_pct", 60)),
+            randomise_order=quiz.get("randomise_order", True),
+            questions=questions,
+        )
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        logger.error("Failed to fetch quiz definition", extra={
+            "course_id": course_id,
+            "module_id": module_id,
+            "error": str(e)
+        })
+        raise HTTPException(status_code=500, detail={
+            "code": "QUIZ_FETCH_FAILED",
+            "message": "Failed to fetch quiz definition"
+        })
 
 
 @router.post("/courses/{course_id}/modules/{module_id}/quiz/generate", response_model=GenerateQuizResponse)

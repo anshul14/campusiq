@@ -444,6 +444,7 @@ class QuizDefinitionResponse(BaseModel):
     max_attempts:       int
     passing_score_pct:  int
     randomise_order:    bool
+    questions: list[QuizQuestionForTeacher]
 
 
 class SaveQuizRequest(BaseModel):
