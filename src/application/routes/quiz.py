@@ -16,7 +16,7 @@ from uuid import uuid4
 from fastapi import APIRouter, Request, HTTPException
 
 from application.schemas import SubmitQuizRequest, SubmitQuizResponse, QuizDefinitionResponse, GenerateQuizRequest, \
-    GenerateQuizResponse, SaveQuizResponse, SaveQuizRequest, QuizAttemptResponse, CourseQuizResultsResponse, \
+    GenerateQuizResponse, SaveQuizResponse, SaveQuizRequest, QuizAttemptResponse, \
     QuizAnswerResult, QuizQuestionForStudent, QuizQuestionForTeacher
 from application.services import dynamodb as db
 
