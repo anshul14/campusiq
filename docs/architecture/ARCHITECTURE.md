@@ -337,6 +337,13 @@ As content moves through the pipeline an ingestion manifest is written to Dynamo
 when the new content is available to students. An important architectural decision is to make the ingestion pipeline opaque to the internally created or externally uploaded content. The same ingestion pipeline 
 is triggered and performs the same steps whether CampusIQ is used for content creation or any other CMS. The AI layer makes no distinction. This is what the Unified Ingestion Pipeline pattern means in practice. 
 
+### 4.3.1 Quiz Authoring — CMS Import vs CampusIQ Native
+
+The CPI ingestion pipeline writes quiz definitions directly to DynamoDB via the service layer — it does not go through the API. This means institutions whose CMS has native quiz or assessment capability (Google Classroom Forms, for example) get their quizzes imported automatically as part of content ingestion.
+
+For institutions whose CMS does not have a native quiz builder (Strapi, S3/files), CampusIQ provides a built-in quiz authoring flow. Teachers use the quiz editor in the CampusIQ UI which calls PUT /courses/{courseId}/modules/{moduleId}/quiz to save the quiz definition. The Assessment Lambda (POST /quiz/generate) can also generate a quiz draft from module content, which the teacher then reviews, edits concept tags, and publishes via the same route.
+
+In both cases — CMS import and native authoring — the quiz definition lands in the same DynamoDB record (PK=COURSE#{courseId} SK=QUIZ#{moduleId}). One quiz per module is enforced by the key design. If a CMS import arrives for a module that already has a teacher-authored quiz, the import overwrites it. Institutions that want to preserve teacher edits should disable quiz import in campusiq.config.json and use the native authoring flow only.
 ### 4.4 Adding a Custom Plugin
 
 Adding a new CMS plugin requires no changes to the CampusIQ platform. The plugin class must extend the ContentPluginInterface and implement its five abstract methods - fetch_content, search_content, 
