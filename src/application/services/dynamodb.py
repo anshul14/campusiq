@@ -685,7 +685,7 @@ def count_quiz_attempts(user_id, course_id, module_id) -> int:
 
 def write_quiz_result(user_id, course_id, module_id, attempt_id,
                       score_pct, passed, concept_scores, quiz_id,
-                      time_taken_seconds, answers, submitted_at, student_name: str = ""):
+                      time_taken_seconds, answers, submitted_at, student_name: str = "", attempt_count: int = 1):
     try:
         ttl = int((datetime.now(timezone.utc) + timedelta(days=730)).timestamp())
         table.put_item(
@@ -697,6 +697,7 @@ def write_quiz_result(user_id, course_id, module_id, attempt_id,
                 "quiz_id": quiz_id,
                 "student_name": student_name,
                 "score_pct": Decimal(str(score_pct)),
+                "attempt_count": attempt_count,
                 "passed": passed,
                 "concept_scores": {
                     concept: Decimal(str(score))
@@ -710,7 +711,7 @@ def write_quiz_result(user_id, course_id, module_id, attempt_id,
                 "updated_at": submitted_at,
                 "ttl": ttl,
                 "GSI1_PK": f"COURSE#{course_id}",
-                "GSI1_SK": f"RESULT#{user_id}#{module_id}#{attempt_id}",
+                "GSI1_SK": f"RESULT#{module_id}#{user_id}#{attempt_id}",
             }
         )
     except ClientError as e:
@@ -815,6 +816,53 @@ def list_quiz_attempts(
 
     return {
         "items": response["Items"],
+        "next_cursor": (
+            encode_cursor(response["LastEvaluatedKey"])
+            if "LastEvaluatedKey" in response
+            else None
+        ),
+    }
+
+
+def list_course_quiz_results(
+        course_id: str,
+        module_id: str,
+        cursor: Optional[str] = None,
+        page_size: int = 50,
+) -> dict:
+    """
+    List all quiz results for a course + module — teacher view.
+
+    Key:
+        GSI1_PK = COURSE#{course_id}
+        GSI1_SK begins_with RESULT#{module_id}#
+
+    GSI1_SK format: RESULT#{moduleId}#{userId}#{attemptId}
+    Putting moduleId first enables filtering by module at the key level —
+    no FilterExpression needed, no Limit gotcha.
+
+    ScanIndexForward=False — most recent submission first.
+
+    Returns:
+        { items: [...], next_cursor: str | None }
+    """
+    kwargs = {
+        "IndexName": "GSI1-course-scoped",
+        "KeyConditionExpression": (
+                Key("GSI1_PK").eq(f"COURSE#{course_id}")
+                & Key("GSI1_SK").begins_with(f"RESULT#{module_id}#")
+        ),
+        "ScanIndexForward": False,
+        "Limit": page_size,
+    }
+
+    if cursor:
+        kwargs["ExclusiveStartKey"] = decode_cursor(cursor)
+
+    response = table.query(**kwargs)
+
+    return {
+        "items": response.get("Items", []),
         "next_cursor": (
             encode_cursor(response["LastEvaluatedKey"])
             if "LastEvaluatedKey" in response

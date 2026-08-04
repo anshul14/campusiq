@@ -106,6 +106,8 @@ async def submit_quiz_attempt(
             answers=body.answers,
             submitted_at=submitted_at,
             student_name=authorizer_context.get("name", ""),
+            attempt_count=attempt_count + 1,  # ← +1 because count_quiz_attempts
+                                                                        # returns attempts BEFORE this one
         )
 
         return SubmitQuizResponse(
