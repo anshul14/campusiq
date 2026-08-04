@@ -105,6 +105,7 @@ async def submit_quiz_attempt(
             time_taken_seconds=body.time_taken_seconds,
             answers=body.answers,
             submitted_at=submitted_at,
+            student_name=authorizer_context.get("name", ""),
         )
 
         return SubmitQuizResponse(

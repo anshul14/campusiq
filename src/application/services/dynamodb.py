@@ -685,7 +685,7 @@ def count_quiz_attempts(user_id, course_id, module_id) -> int:
 
 def write_quiz_result(user_id, course_id, module_id, attempt_id,
                       score_pct, passed, concept_scores, quiz_id,
-                      time_taken_seconds, answers, submitted_at):
+                      time_taken_seconds, answers, submitted_at, student_name: str = ""):
     try:
         ttl = int((datetime.now(timezone.utc) + timedelta(days=730)).timestamp())
         table.put_item(
@@ -695,6 +695,7 @@ def write_quiz_result(user_id, course_id, module_id, attempt_id,
                 "course_id": course_id,
                 "module_id": module_id,
                 "quiz_id": quiz_id,
+                "student_name": student_name,
                 "score_pct": Decimal(str(score_pct)),
                 "passed": passed,
                 "concept_scores": {

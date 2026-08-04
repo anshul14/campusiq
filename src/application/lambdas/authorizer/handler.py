@@ -64,6 +64,7 @@ def handler(event, context):
                 "role": role,
                 "email": email,
                 "grade": grade,
+                'name': claims.get('name', ''),
             }
         }
     except JWTError as e:
