@@ -103,11 +103,11 @@ async def submit_quiz_attempt(
             concept_scores=concept_scores,
             quiz_id=body.quiz_id,
             time_taken_seconds=body.time_taken_seconds,
-            answers=body.answers,
+            answers=[a.model_dump() for a in body.answers],
             submitted_at=submitted_at,
             student_name=authorizer_context.get("name", ""),
             attempt_count=attempt_count + 1,  # ← +1 because count_quiz_attempts
-                                                                        # returns attempts BEFORE this one
+            # returns attempts BEFORE this one
         )
 
         return SubmitQuizResponse(
@@ -121,8 +121,10 @@ async def submit_quiz_attempt(
     except HTTPException:
         raise
 
+
     except Exception as e:
-        logger.error("Quiz submission failed", extra={
+        import traceback
+        logger.error(f"Quiz submission failed: {str(e)}\nTraceback: {traceback.format_exc()}", extra={
             "course_id": course_id,
             "module_id": module_id,
             "error": str(e)
@@ -373,6 +375,3 @@ async def get_quiz_attempt(
             "code": "QUIZ_FETCH_FAILED",
             "message": "Failed to fetch quiz attempt"
         })
-
-
-
