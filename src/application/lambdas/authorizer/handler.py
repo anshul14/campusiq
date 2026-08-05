@@ -49,6 +49,15 @@ def handler(event, context):
         email = claims.get("email", "")
         grade = claims.get("custom:grade", "")
 
+        # Build wildcard resource — allows all methods on all routes in this API
+        # methodArn format: arn:aws:execute-api:{region}:{accountId}:{apiId}/{stage}/{method}/{resource}
+        # Wildcard format:  arn:aws:execute-api:{region}:{accountId}:{apiId}/{stage}/*/*
+        # This enables authorizer response caching across all routes — one auth call covers all subsequent requests
+        arn_parts = event["methodArn"].split(":")
+        api_gateway_arn = arn_parts[5]
+        api_id_and_stage = "/".join(api_gateway_arn.split("/")[:2])
+        wildcard_arn = ":".join(arn_parts[:5]) + ":" + api_id_and_stage + "/*/*"
+
         return {
             "principalId": user_id,
             "policyDocument": {
@@ -56,7 +65,7 @@ def handler(event, context):
                 "Statement": [{
                     "Action": "execute-api:Invoke",
                     "Effect": "Allow",
-                    "Resource": event["methodArn"],
+                    "Resource": wildcard_arn,
                 }]
             },
             "context": {
@@ -64,9 +73,10 @@ def handler(event, context):
                 "role": role,
                 "email": email,
                 "grade": grade,
-                'name': claims.get('name', ''),
+                "name": claims.get("name", ""),
             }
         }
+
     except JWTError as e:
         logger.error(f"JWT validation failed: {str(e)}")
         raise Exception("Unauthorized")
