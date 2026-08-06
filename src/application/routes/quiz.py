@@ -93,6 +93,9 @@ async def submit_quiz_attempt(
         attempt_id = now.strftime('%Y%m%dT%H%M%S') + '-' + str(uuid4())[:8]
         submitted_at = now.isoformat()
 
+        student_profile = db.get_student_profile(user_id)
+        student_name = student_profile.get("name", "") if student_profile else ""
+
         db.write_quiz_result(
             user_id=user_id,
             course_id=course_id,
@@ -105,7 +108,7 @@ async def submit_quiz_attempt(
             time_taken_seconds=body.time_taken_seconds,
             answers=[a.model_dump() for a in body.answers],
             submitted_at=submitted_at,
-            student_name=authorizer_context.get("name", ""),
+            student_name=student_name,
             attempt_count=attempt_count + 1,  # ← +1 because count_quiz_attempts
             # returns attempts BEFORE this one
         )
