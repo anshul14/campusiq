@@ -22,7 +22,7 @@ from application.schemas import TeacherCoursesResponse, CourseQuizResultsRespons
 from application.services import dynamodb as db
 
 router = APIRouter(
-    prefix="/teachers",
+    prefix="/teacher",
     tags=["teachers"],
 )
 
