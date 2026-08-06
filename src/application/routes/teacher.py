@@ -106,8 +106,10 @@ async def get_course_quiz_results(
     except HTTPException:
         raise
 
+
     except Exception as e:
-        logger.error("Failed to fetch course quiz results", extra={
+        import traceback
+        logger.error(f"Failed to fetch course quiz results: {str(e)}\n{traceback.format_exc()}", extra={
             "course_id": course_id,
             "module_id": module_id,
             "error": str(e)
