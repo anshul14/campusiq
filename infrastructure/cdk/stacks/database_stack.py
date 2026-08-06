@@ -59,16 +59,21 @@ class DatabaseStack(Stack):
         )
 
         # ------------------------------------------------------------------
-        # GSI 1 — EntityTypeIndex
-        # Purpose: list all entities of a given type (all courses, all students)
-        # PK: entity_type  (e.g. "COURSE", "STUDENT", "GAP")
-        # SK: none — returns all records of that type
-        # Used by: GET /courses, admin listing endpoints
+        # GSI 1 — CourseIndex
+        # Purpose: course-scoped queries — class roster, quiz results, progress
+        # PK: GSI1_PK  = "COURSE#{courseId}" or "DEPLOYMENT#main"
+        # SK: GSI1_SK  = varies by entity type (STUDENT#, RESULT#, PROGRESS#, etc.)
+        # Used by: teacher dashboard, class roster, quiz results by course,
+        #          list all courses (DEPLOYMENT#main)
         # ------------------------------------------------------------------
         self.table.add_global_secondary_index(
-            index_name="EntityTypeIndex",
+            index_name="CourseIndex",
             partition_key=dynamodb.Attribute(
-                name="entity_type",
+                name="GSI1_PK",
+                type=dynamodb.AttributeType.STRING,
+            ),
+            sort_key=dynamodb.Attribute(
+                name="GSI1_SK",
                 type=dynamodb.AttributeType.STRING,
             ),
             projection_type=dynamodb.ProjectionType.ALL,

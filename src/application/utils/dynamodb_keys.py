@@ -36,10 +36,6 @@ def parent_pk(cognito_sub: str) -> str:
     return f"PARENT#{cognito_sub}"
 
 
-def quiz_pk(quiz_id: str) -> str:
-    return f"QUIZ#{quiz_id}"
-
-
 def config_cms_pk() -> str:
     return "CONFIG#cms_plugin"
 
@@ -62,8 +58,10 @@ def metadata_sk() -> str:
 def module_sk(module_id: str) -> str:
     return f"MODULE#{module_id}"
 
+
 def profile_sk() -> str:
     return "PROFILE"
+
 
 def enrol_sk(course_id: str) -> str:
     return f"ENROL#{course_id}"
@@ -128,9 +126,12 @@ def gsi1_progress_sk(cognito_sub: str, module_id: str) -> str:
     return f"PROGRESS#{cognito_sub}#{module_id}"
 
 
-def gsi1_result_sk(cognito_sub: str, module_id: str, attempt_id: str) -> str:
-    """GSI1 sort key for quiz result records."""
-    return f"RESULT#{cognito_sub}#{module_id}#{attempt_id}"
+def gsi1_result_sk(module_id: str, cognito_sub: str, attempt_id: str) -> str:
+    """GSI1 sort key for quiz result records.
+    Format: RESULT#{moduleId}#{userId}#{attemptId}
+    moduleId first enables filtering by module at key level — no FilterExpression needed.
+    """
+    return f"RESULT#{module_id}#{cognito_sub}#{attempt_id}"
 
 
 def gsi2_gap_severity_sk(gap_severity: float) -> str:

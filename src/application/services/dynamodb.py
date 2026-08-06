@@ -847,7 +847,7 @@ def list_course_quiz_results(
         { items: [...], next_cursor: str | None }
     """
     kwargs = {
-        "IndexName": "GSI1-course-scoped",
+        "IndexName": "CourseIndex",
         "KeyConditionExpression": (
                 Key("GSI1_PK").eq(f"COURSE#{course_id}")
                 & Key("GSI1_SK").begins_with(f"RESULT#{module_id}#")
