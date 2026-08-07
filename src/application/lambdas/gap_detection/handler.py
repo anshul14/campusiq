@@ -38,7 +38,7 @@ logger.setLevel(logging.INFO)
 # ADR-012 — module-level client, created once on cold start, reused across
 # warm invocations. Holds no user-specific state.
 dynamodb = boto3.resource("dynamodb", region_name=os.environ.get("AWS_REGION", "us-east-1"))
-table = dynamodb.Table(os.environ["TABLE_NAME"])
+table = dynamodb.Table(os.environ["DYNAMODB_TABLE_NAME"])
 
 RECENCY_DECAY = Decimal("0.6")  # each older attempt weighted 0.6x the one after it
 

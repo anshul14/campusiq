@@ -26,6 +26,7 @@ dynamodb = boto3.resource("dynamodb")
 table = dynamodb.Table(os.getenv("DYNAMODB_TABLE_NAME", ""))
 
 ENTITY_TYPE_INDEX = "EntityTypeIndex"
+AT_RISK_INDEX = "AtRiskIndex"
 
 
 # Encode LastEvaluatedKey -> opaque cursor string
@@ -870,6 +871,7 @@ def list_course_quiz_results(
         ),
     }
 
+
 def save_quiz(
         course_id: str,
         module_id: str,
@@ -929,3 +931,92 @@ def save_quiz(
         raise e
 
     return quiz_id
+
+
+def list_teacher_courses(teacher_id: str) -> list[dict]:
+    """
+    Query all TEACHES# records for a teacher.
+
+    KeyConditionExpression:
+        PK = TEACHER#{teacher_id}   AND   SK begins_with TEACHES#
+
+    No pagination here (unlike list_student_enrolments) — a teacher's
+    assigned-course count is small and bounded, and the caller
+    (GET /teacher/me/courses) needs the complete list, not a page of it.
+
+    Returns: raw Items list — each item has course_id already stored as an
+    attribute (see Entity 04), no key-parsing needed by the caller.
+    """
+    response = table.query(
+        KeyConditionExpression=(
+                Key("PK").eq(f"TEACHER#{teacher_id}")
+                & Key("SK").begins_with("TEACHES#")
+        ),
+    )
+    return response["Items"]
+
+
+def count_active_enrollments(course_id: str) -> int:
+    """
+    Count active (non-archived, per ADR-005) enrolments for a course via
+    the CourseIndex (GSI1) flip.
+
+    KeyConditionExpression:
+        GSI1_PK = COURSE#{course_id}   AND   GSI1_SK begins_with STUDENT#
+
+    The begins_with STUDENT# is required, not optional — Teacher Assignment
+    records share the same GSI1_PK=COURSE#{course_id} but use
+    GSI1_SK=TEACHER#{sub}, so without this filter the count would include
+    teacher assignments alongside student enrolments.
+
+    Paginated internally (unlike count_quiz_attempts) since a single query()
+    only guarantees ~1MB per page and a popular course could exceed that.
+    """
+    count = 0
+    kwargs = {
+        "IndexName": "CourseIndex",
+        "KeyConditionExpression": (
+                Key("GSI1_PK").eq(f"COURSE#{course_id}")
+                & Key("GSI1_SK").begins_with("STUDENT#")
+        ),
+        "FilterExpression": Attr("status").eq("active"),
+        "Select": "COUNT",
+    }
+    while True:
+        response = table.query(**kwargs)
+        count += response["Count"]
+        if "LastEvaluatedKey" not in response:
+            break
+        kwargs["ExclusiveStartKey"] = response["LastEvaluatedKey"]
+    return count
+
+
+def list_course_gap_records(course_id: str) -> list[dict]:
+    """
+    Every GAP# record for a course via AtRiskIndex (GSI3) — no severity
+    filter. Callers computing avg_mastery need every assessed student, not
+    just the ones over the at-risk threshold.
+
+    KeyConditionExpression:
+        GSI3_PK = COURSE#{course_id}
+
+    Paginated internally for the same reason as count_active_enrollments —
+    this feeds an aggregate calculation (per-student-then-course averaging
+    in the route layer) that needs the complete dataset, not one page of it.
+
+    Returns: raw Items list. gap_severity comes back as Decimal — callers
+    doing arithmetic on it should stay in Decimal, not cast to float
+    mid-calculation.
+    """
+    items = []
+    kwargs = {
+        "IndexName": AT_RISK_INDEX,
+        "KeyConditionExpression": Key("GSI3_PK").eq(f"COURSE#{course_id}"),
+    }
+    while True:
+        response = table.query(**kwargs)
+        items.extend(response.get("Items", []))
+        if "LastEvaluatedKey" not in response:
+            break
+        kwargs["ExclusiveStartKey"] = response["LastEvaluatedKey"]
+    return items

@@ -868,3 +868,22 @@ class CreateParentLinkResponse(BaseModel):
     parent_sub:  str
     child_sub:   str
     linked_at:   str
+
+
+# Add to src/application/schemas.py
+
+from pydantic import BaseModel
+
+
+class CourseSummaryForTeacher(BaseModel):
+    course_id: str
+    title: str
+    status: str
+    enrolled_count: int
+    assessed_count: int  # how many enrolled students have >=1 GAP# record
+    at_risk_count: int
+    avg_mastery: float | None  # None = no student assessed yet, not "0 gaps"
+
+
+class TeacherCoursesResponse(BaseModel):
+    courses: list[CourseSummaryForTeacher]
