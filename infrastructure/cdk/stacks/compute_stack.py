@@ -299,6 +299,7 @@ class ComputeStack(Stack):
                 batch_size=10,
                 bisect_batch_on_error=True,
                 retry_attempts=3,
+                report_batch_item_failures=True
             )
         )
 
