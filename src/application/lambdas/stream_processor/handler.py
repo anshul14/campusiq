@@ -46,9 +46,7 @@ NOTE ON GSI NAMING: this file does not read or write any GSI directly —
 it only reads NewImage attributes off the stream record and republishes
 an EventBridge event. GSI names (GapSeverityIndex, AtRiskIndex) are only
 relevant to the Gap Detection Agent that consumes QuizCompleted, and to
-whichever Lambda queries the GSIs later. Flagging this here since the
-project's LLD doc uses illustrative names (GSI2-gap-severity,
-GSI3-at-risk) that differ from the names actually deployed.
+whichever Lambda queries the GSIs later.
 """
 
 import json
