@@ -47,6 +47,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(admin_router'')
+app.include_router(admin_router)
 
 handler = Mangum(app)
