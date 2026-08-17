@@ -65,6 +65,8 @@ def handler(event, context):
     student_id = detail["student_id"]
     course_id = detail["course_id"]
     concept_scores = detail.get("concept_scores", {})
+    module_id = detail.get("module_id")
+    attempt_id = detail.get("attempt_id")
 
     if not concept_scores:
         logger.info(
@@ -77,7 +79,7 @@ def handler(event, context):
     for concept_id in concept_scores:
         try:
             severity = calculate_gap_severity(student_id, course_id, concept_id)
-            write_knowledge_gap(student_id, course_id, concept_id, severity)
+            write_knowledge_gap(student_id, course_id, concept_id, severity, module_id, attempt_id)
             processed += 1
             # GapDetected is not published here — the Stream Processor fires
             # it when this put_item's GAP# write lands on the DynamoDB Stream.
@@ -149,10 +151,7 @@ def fetch_historical_concept_scores(student_id: str, course_id: str, concept_id:
     return scores
 
 
-def write_knowledge_gap(
-    student_id: str, course_id: str, concept_id: str, severity: Decimal,
-    module_id: str | None, attempt_id: str | None,
-) -> None:
+def write_knowledge_gap(student_id, course_id, concept_id, severity, module_id, attempt_id)-> None:
     """
     Writes/overwrites the GAP#{conceptId} record (Entity 09). One put_item
     triggers 3 internal writes — main table + GSI2 + GSI3.
@@ -182,6 +181,8 @@ def write_knowledge_gap(
             "concept_name": concept_name,
             "course_id": course_id,
             "gap_severity": severity,
+            "last_module_id": module_id,
+            "last_attempt_id": attempt_id,
             "last_updated": now,
             "GSI2_PK": f"STUDENT#{student_id}",
             "GSI2_SK": severity_str,
