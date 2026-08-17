@@ -13,3 +13,7 @@ dist/
 .idea/
 .vscode/
 .kiro/
+tools/personalize-bootstrap/interactions.csv
+tools/personalize-bootstrap/items.csv
+tools/personalize-bootstrap/batch_input.json
+tools/personalize-bootstrap/batch_output.json

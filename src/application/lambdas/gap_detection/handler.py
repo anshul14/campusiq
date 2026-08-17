@@ -149,10 +149,22 @@ def fetch_historical_concept_scores(student_id: str, course_id: str, concept_id:
     return scores
 
 
-def write_knowledge_gap(student_id: str, course_id: str, concept_id: str, severity: Decimal) -> None:
+def write_knowledge_gap(
+    student_id: str, course_id: str, concept_id: str, severity: Decimal,
+    module_id: str | None, attempt_id: str | None,
+) -> None:
     """
     Writes/overwrites the GAP#{conceptId} record (Entity 09). One put_item
     triggers 3 internal writes — main table + GSI2 + GSI3.
+
+    last_module_id/last_attempt_id record which QuizCompleted event most
+    recently triggered this recalculation — added so Content Adaptation
+    Lambda's targeted-clarification tier (0.7-0.85 band) can trace back to
+    the specific quiz attempt and pull the exact wrong question(s) to ground
+    its explanation in, without needing to re-derive "which attempt caused
+    this" downstream. Both are None only if this Lambda is ever invoked
+    without a real QuizCompleted detail (shouldn't happen in production,
+    but not worth failing the whole gap write over).
     """
     severity_str = f"{severity:.3f}"  # zero-padded, e.g. '0.750' — matches GSI2_SK/GSI3_SK format
     now = datetime.now(timezone.utc).isoformat()

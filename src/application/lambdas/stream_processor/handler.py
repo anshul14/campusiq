@@ -199,6 +199,13 @@ def _fire_gap_detected(image: dict) -> None:
     Fired when a KnowledgeGap record (SK begins with GAP#) is written or updated
     with gap_severity exceeding the at-risk threshold (0.7). Triggers the
     Recommendation Agent (and, at higher severity, Content Adaptation).
+
+    last_module_id/last_attempt_id are forwarded from the GAP# record so
+    Content Adaptation Lambda's clarification tier (0.7-0.85 band) can
+    trace back to the specific quiz attempt that triggered this gap,
+    without needing to re-derive it downstream. Both may be absent (None)
+    on older GAP# records written before this field was added — read with
+    .get(), not [], so this doesn't break on those.
     """
     student_id = image["PK"].replace("STUDENT#", "")
     concept_id = image["SK"].replace("GAP#", "")
@@ -208,6 +215,8 @@ def _fire_gap_detected(image: dict) -> None:
         "concept_id": concept_id,
         "gap_severity": float(image["gap_severity"]),
         "course_id": image.get("course_id"),
+        "last_module_id": image.get("last_module_id"),
+        "last_attempt_id": image.get("last_attempt_id"),
     }
 
     _put_event(source="campusiq.gap", detail_type="GapDetected", detail=detail)
