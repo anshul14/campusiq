@@ -136,6 +136,7 @@ class ComputeStack(Stack):
                             "'pydantic[email]==2.7.0' "
                             "aws-lambda-powertools==3.3.0 "
                             "python-jose[cryptography]==3.3.0 "
+                            "pypdf==6.16.1 "
                             "--target /asset-output/python/lib/python3.12/site-packages "
                             "--no-cache-dir "
                             "--quiet",
@@ -341,19 +342,9 @@ class ComputeStack(Stack):
             entry="src/application/lambdas/recommendation",
             memory=512,
             timeout=60,
-            extra_env={
-                "PERSONALIZE_CAMPAIGN_ARN": self.node.try_get_context(
-                    "personalize_campaign_arn") or "REPLACE_WITH_CAMPAIGN_ARN",
-            },
+            extra_env={},
         )
         self.table.grant_read_write_data(self.recommendation_lambda)
-        self.recommendation_lambda.add_to_role_policy(
-            iam.PolicyStatement(
-                effect=iam.Effect.ALLOW,
-                actions=["personalize:GetRecommendations"],
-                resources=["*"],
-            )
-        )
 
         # ------------------------------------------------------------------
         # Content Adaptation Lambda
@@ -370,7 +361,7 @@ class ComputeStack(Stack):
             memory=512,
             timeout=90,
             extra_env={
-                "CONTENT_BUCKET_NAME": self.node.try_get_context("content_bucket_name") or "REPLACE_WITH_BUCKET_NAME",
+                "CONTENT_BUCKET_NAME": cdk.Fn.import_value("campusiq-vnit-dev-content-bucket"),
             },
         )
         self.table.grant_read_write_data(self.content_adaptation_lambda)
@@ -382,11 +373,19 @@ class ComputeStack(Stack):
             )
         )
         # S3 read (fetch original content) + write (save adapted variant)
+        content_bucket_arn = cdk.Fn.import_value("campusiq-vnit-dev-content-bucket-arn")
         self.content_adaptation_lambda.add_to_role_policy(
             iam.PolicyStatement(
                 effect=iam.Effect.ALLOW,
                 actions=["s3:GetObject", "s3:PutObject"],
-                resources=["*"],  # Scope to content bucket ARN once provisioned
+                resources=[f"{content_bucket_arn}/*"],  # objects within the bucket, not the bucket resource itself
+            )
+        )
+        self.content_adaptation_lambda.add_to_role_policy(
+            iam.PolicyStatement(
+                effect=iam.Effect.ALLOW,
+                actions=["aws-marketplace:ViewSubscriptions", "aws-marketplace:Subscribe"],
+                resources=["*"],  # account-level marketplace actions, not resource-scopable
             )
         )
 

@@ -17,3 +17,10 @@ tools/personalize-bootstrap/interactions.csv
 tools/personalize-bootstrap/items.csv
 tools/personalize-bootstrap/batch_input.json
 tools/personalize-bootstrap/batch_output.json
+
+# Draw.io editor lock/backup files
+.$*.bkp
+
+# Ad-hoc Lambda invoke test scratch files
+response.json
+test_gap_detected_event.json
