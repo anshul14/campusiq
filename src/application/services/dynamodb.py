@@ -1020,3 +1020,63 @@ def list_course_gap_records(course_id: str) -> list[dict]:
             break
         kwargs["ExclusiveStartKey"] = response["LastEvaluatedKey"]
     return items
+
+
+# Add to src/application/dynamodb.py
+
+def get_quiz_result(student_id: str, course_id: str, module_id: str, attempt_id: str) -> dict | None:
+    """
+    A single QuizResult record for one specific attempt.
+    PK=STUDENT#{sub}, SK=RESULT#{courseId}#{moduleId}#{attemptId}
+    """
+    response = table.get_item(
+        Key={"PK": f"STUDENT#{student_id}", "SK": f"RESULT#{course_id}#{module_id}#{attempt_id}"}
+    )
+    return response.get("Item")
+
+
+def get_quiz_definition(course_id: str, module_id: str) -> dict | None:
+    """
+    The QuizDefinition record for a module.
+    PK=COURSE#{courseId}, SK=QUIZ#{moduleId}
+    """
+    response = table.get_item(Key={"PK": f"COURSE#{course_id}", "SK": f"QUIZ#{module_id}"})
+    return response.get("Item")
+
+
+def write_clarification(student_id: str, concept_id: str, clarification: dict) -> None:
+    """
+    Writes/overwrites the CLARIFICATION#{conceptId} record. Same
+    overwrite-in-place pattern as GAP# -- no TTL, always reflects the
+    latest regeneration for this student/concept.
+    """
+    table.put_item(Item={
+        "PK": f"STUDENT#{student_id}",
+        "SK": f"CLARIFICATION#{concept_id}",
+        "entity_type": "CLARIFICATION",
+        "misconception": clarification["misconception"],
+        "clarification": clarification["clarification"],
+        "prompt_to_revisit": clarification["prompt_to_revisit"],
+    })
+
+
+def get_module(course_id: str, module_id: str) -> dict | None:
+    """
+    The Module record. PK=COURSE#{courseId}, SK=MODULE#{moduleId}
+    """
+    response = table.get_item(Key={"PK": f"COURSE#{course_id}", "SK": f"MODULE#{module_id}"})
+    return response.get("Item")
+
+
+def update_module_adapted_content_key(course_id: str, module_id: str, adapted_key: str) -> None:
+    """
+    Sets adapted_content_s3_key on a Module record once Content Adaptation
+    has generated a shared lower-difficulty variant. Presence of this
+    field is the idempotency check that prevents regenerating it for
+    every subsequent struggling student on the same module.
+    """
+    table.update_item(
+        Key={"PK": f"COURSE#{course_id}", "SK": f"MODULE#{module_id}"},
+        UpdateExpression="SET adapted_content_s3_key = :key",
+        ExpressionAttributeValues={":key": adapted_key},
+    )

@@ -21,16 +21,18 @@ Produces:
     GAP# — no TTL, always reflects the latest recalculation.
 
   - Full rewrite tier (severity > 0.85, ANY content format): adapted
-    Markdown saved to S3, MODULE# record updated with
+    Markdown saved to S3 alongside the original (same directory,
+    "-adapted" suffix), MODULE# record updated with
     adapted_content_s3_key. SHARED across all students on that module,
     not per-student — the first student to cross 0.85 triggers the
     rewrite; every subsequent struggling student reuses it. Regeneration
     is skipped if adapted_content_s3_key already exists (idempotent,
     avoids redundant Bedrock calls).
 
-Model: Claude 3 Haiku for both tiers, per ARCHITECTURE.md 5.3 (Content
-Adaptation is a "lower complexity" rewriting/structured-output task, same
-category as Assessment Lambda's quiz generation).
+Model: Claude Haiku 4.5 (cross-region inference profile), per
+ARCHITECTURE.md 5.3's original Claude 3 Haiku selection — updated after
+Claude 3 Haiku and 3.5 Haiku were both marked Legacy on Bedrock,
+confirmed via a live ResourceNotFoundException during testing.
 
 Both tiers are independently gated, not one severity-tiered flow:
 clarification never touches module content at all (grounded entirely in
@@ -40,14 +42,18 @@ module text, so it extracts it per format (markdown: read as-is; PDF:
 pypdf text extraction; video: strip the existing WebVTT transcript
 Transcribe already generated at ingestion) and feeds all three into one
 shared rewrite call — the output is always Markdown regardless of source
-format. A student on a PDF or video module gets real intervention either
-way: clarification always, full rewrite whenever content is extractable.
+format.
+
+DynamoDB access goes through application.dynamodb (db.*), not inline
+boto3 — matches the convention established for HTTP routes (see
+routes/teacher.py). S3 and Bedrock clients stay inline here since
+dynamodb.py's scope is DynamoDB access specifically.
 
 Known limitation, not solved here: scanned/image-based PDFs have no
-extractable text layer (same category of problem as pypdf everywhere) —
-would need Textract OCR, out of scope for now. Extraction failures are
-logged clearly and skip the rewrite tier gracefully rather than crashing
-the whole invocation — the clarification tier still completes independently.
+extractable text layer — would need Textract OCR, out of scope for now.
+Extraction failures are logged clearly and skip the rewrite tier
+gracefully rather than crashing the whole invocation — the clarification
+tier still completes independently.
 """
 
 import io
@@ -58,13 +64,12 @@ import re
 from decimal import Decimal
 
 import boto3
-from boto3.dynamodb.conditions import Key
+
+from application.services import dynamodb as db
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-dynamodb = boto3.resource("dynamodb", region_name=os.environ.get("AWS_REGION", "us-east-1"))
-table = dynamodb.Table(os.environ["DYNAMODB_TABLE_NAME"])
 s3 = boto3.client("s3", region_name=os.environ.get("AWS_REGION", "us-east-1"))
 bedrock = boto3.client("bedrock-runtime", region_name=os.environ.get("AWS_REGION", "us-east-1"))
 
@@ -94,7 +99,8 @@ def handler(event, context):
     student_id = detail["student_id"]
     course_id = detail["course_id"]
     concept_id = detail["concept_id"]
-    gap_severity = Decimal(str(detail["gap_severity"]))  # EventBridge detail is JSON float; Decimal for exact threshold comparison
+    gap_severity = Decimal(
+        str(detail["gap_severity"]))  # EventBridge detail is JSON float; Decimal for exact threshold comparison
     module_id = detail.get("last_module_id")
     attempt_id = detail.get("last_attempt_id")
 
@@ -131,7 +137,8 @@ def handler(event, context):
 
 # ── Clarification tier — format-agnostic, grounded in the quiz question ────
 
-def run_clarification_tier(student_id: str, course_id: str, concept_id: str, module_id: str | None, attempt_id: str | None) -> str:
+def run_clarification_tier(student_id: str, course_id: str, concept_id: str, module_id: str | None,
+                           attempt_id: str | None) -> str:
     if not module_id or not attempt_id:
         logger.info("No module_id/attempt_id on this gap (older GAP# record) — skipping clarification.")
         return "skipped_no_attempt_data"
@@ -150,28 +157,24 @@ def run_clarification_tier(student_id: str, course_id: str, concept_id: str, mod
         return "skipped_thin_explanation"
 
     clarification = generate_clarification(wrong_question)
-    write_clarification(student_id, concept_id, clarification)
+    db.write_clarification(student_id, concept_id, clarification)
     return "generated"
 
 
-def find_wrong_question(student_id: str, course_id: str, module_id: str, attempt_id: str, concept_id: str) -> dict | None:
+def find_wrong_question(student_id: str, course_id: str, module_id: str, attempt_id: str,
+                        concept_id: str) -> dict | None:
     """
     Cross-references the triggering attempt's RESULT# record against the
     QUIZ# definition to find which specific question, tagged with this
     concept, the student got wrong. Returns the first match — quizzes
     with multiple questions per concept ground on the first wrong one
-    found, not all of them, matching the same "keep it simple" choice
-    made in Recommendation Lambda's rationale field.
+    found, not all of them.
     """
-    result_item = table.get_item(
-        Key={"PK": f"STUDENT#{student_id}", "SK": f"RESULT#{course_id}#{module_id}#{attempt_id}"}
-    ).get("Item")
+    result_item = db.get_quiz_result(student_id, course_id, module_id, attempt_id)
     if result_item is None:
         return None
 
-    quiz_item = table.get_item(
-        Key={"PK": f"COURSE#{course_id}", "SK": f"QUIZ#{module_id}"}
-    ).get("Item")
+    quiz_item = db.get_quiz_definition(course_id, module_id)
     if quiz_item is None:
         return None
 
@@ -196,6 +199,19 @@ def find_wrong_question(student_id: str, course_id: str, module_id: str, attempt
     return None
 
 
+def strip_json_code_fence(text: str) -> str:
+    """
+    Claude Haiku 4.5 sometimes wraps JSON output in a Markdown code fence
+    despite being told not to ("no preamble"). Strip it defensively rather
+    than rely on prompt wording alone to prevent it.
+    """
+    text = text.strip()
+    if text.startswith("```"):
+        text = re.sub(r"^```[a-zA-Z]*\n?", "", text)
+        text = re.sub(r"\n?```$", "", text)
+    return text.strip()
+
+
 def generate_clarification(wrong_question: dict) -> dict:
     system_prompt = (
         "You are writing a short clarification (2-4 sentences) for a student who "
@@ -218,19 +234,13 @@ def generate_clarification(wrong_question: dict) -> dict:
         f"Teacher's explanation: {wrong_question['explanation']}"
     )
 
-    response_text = invoke_bedrock(system_prompt, user_prompt, max_tokens=400)
-    return json.loads(response_text)  # let a malformed response raise -- caught by the outer try/except in handler()
-
-
-def write_clarification(student_id: str, concept_id: str, clarification: dict) -> None:
-    table.put_item(Item={
-        "PK": f"STUDENT#{student_id}",
-        "SK": f"CLARIFICATION#{concept_id}",
-        "entity_type": "CLARIFICATION",
-        "misconception": clarification["misconception"],
-        "clarification": clarification["clarification"],
-        "prompt_to_revisit": clarification["prompt_to_revisit"],
-    })
+    response_text = invoke_bedrock(system_prompt, user_prompt, max_tokens=1024)
+    response_text = strip_json_code_fence(response_text)
+    try:
+        return json.loads(response_text)
+    except json.JSONDecodeError:
+        logger.error("Clarification response was not valid JSON. Raw text: %r", response_text)
+        raise
 
 
 # ── Full rewrite tier — format-agnostic via per-format extraction ──────────
@@ -239,7 +249,7 @@ def run_full_rewrite_tier(course_id: str, module_id: str | None) -> str:
     if not module_id:
         return "skipped_no_module_id"
 
-    module = table.get_item(Key={"PK": f"COURSE#{course_id}", "SK": f"MODULE#{module_id}"}).get("Item")
+    module = db.get_module(course_id, module_id)
     if module is None:
         logger.error("Module not found. course_id=%s module_id=%s", course_id, module_id)
         return "skipped_module_not_found"
@@ -269,8 +279,8 @@ def run_full_rewrite_tier(course_id: str, module_id: str | None) -> str:
         return "skipped_empty_extraction"
 
     adapted_markdown = rewrite_content(source_text)
-    adapted_key = save_adapted_content(course_id, module_id, adapted_markdown)
-    update_module_with_adapted_key(course_id, module_id, adapted_key)
+    adapted_key = save_adapted_content(module, adapted_markdown)
+    db.update_module_adapted_content_key(course_id, module_id, adapted_key)
     return "generated"
 
 
@@ -341,23 +351,33 @@ def rewrite_content(source_text: str) -> str:
     return invoke_bedrock(system_prompt, source_text, max_tokens=2000)
 
 
-def save_adapted_content(course_id: str, module_id: str, adapted_markdown: str) -> str:
-    key = f"university/{course_id}/modules/{module_id}/content-adapted.md"
-    s3.put_object(Bucket=CONTENT_BUCKET, Key=key, Body=adapted_markdown.encode("utf-8"), ContentType="text/markdown")
-    return key
-
-
-def update_module_with_adapted_key(course_id: str, module_id: str, adapted_key: str) -> None:
-    table.update_item(
-        Key={"PK": f"COURSE#{course_id}", "SK": f"MODULE#{module_id}"},
-        UpdateExpression="SET adapted_content_s3_key = :key",
-        ExpressionAttributeValues={":key": adapted_key},
-    )
+def save_adapted_content(module: dict, adapted_markdown: str) -> str:
+    """
+    Derives the adapted key from the module's own real content_s3_key by
+    inserting "-adapted" before the file extension -- guarantees the
+    adapted variant sits in the same directory as the original, rather
+    than reconstructing a path from course_id/module_id that could drift
+    from whatever folder convention the original actually uses.
+    e.g. university/phys101/week5/content.md -> .../content-adapted.md
+    """
+    original_key = module["content_s3_key"]
+    base, ext = original_key.rsplit(".", 1)
+    adapted_key = f"{base}-adapted.{ext}"
+    s3.put_object(Bucket=CONTENT_BUCKET, Key=adapted_key, Body=adapted_markdown.encode("utf-8"),
+                  ContentType="text/markdown")
+    return adapted_key
 
 
 # ── Shared Bedrock helper ───────────────────────────────────────────────────
 
 def invoke_bedrock(system_prompt: str, user_prompt: str, max_tokens: int) -> str:
+    """
+    Claude Haiku 4.5 supports hybrid/extended reasoning -- the response's
+    content array can include non-text blocks (e.g. type="thinking")
+    before the actual text block. Filter for the real text block(s)
+    instead of assuming position 0, which was the shape of the older,
+    simpler Claude 3 Haiku response and broke silently on this model.
+    """
     response = bedrock.invoke_model(
         modelId=MODEL_ID,
         body=json.dumps({
@@ -368,4 +388,10 @@ def invoke_bedrock(system_prompt: str, user_prompt: str, max_tokens: int) -> str
         }),
     )
     body = json.loads(response["body"].read())
-    return body["content"][0]["text"]
+    text_blocks = [block["text"] for block in body.get("content", []) if block.get("type") == "text"]
+
+    if not text_blocks:
+        logger.error("No text block found in Bedrock response. Raw body: %s", json.dumps(body))
+        raise ValueError("Bedrock response contained no text content block")
+
+    return "".join(text_blocks)
