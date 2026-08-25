@@ -1080,3 +1080,117 @@ def update_module_adapted_content_key(course_id: str, module_id: str, adapted_ke
         UpdateExpression="SET adapted_content_s3_key = :key",
         ExpressionAttributeValues={":key": adapted_key},
     )
+
+    # ------------------------------------------------------------------
+    # ADDITION for dynamodb.py — supports ContentPlugin.ingest_content()
+    #
+    # Neither create_module() nor update_module() (existing functions)
+    # accept content_s3_key, ingestion_status, domain, or difficulty — the
+    # exact fields CPI ingestion needs to write. Rather than retrofit those
+    # two (both are the teacher-authored-module write path, already in use
+    # elsewhere, no driving bug to justify touching them — same reasoning
+    # already applied to the Gap Detection/Recommendation dynamodb.py
+    # cleanup item), this is a new, dedicated function for the ingestion
+    # write path specifically.
+    #
+    # Handles both cases in one call: a brand-new module discovered during
+    # backfill (Path B — see s3_plugin.py) gets created; a module ingest_content
+    # is called on again (re-sync) gets its content_s3_key/ingestion_status
+    # refreshed without clobbering fields ingestion doesn't own (title,
+    # prerequisites, status — those stay under the teacher-authored/
+    # create_module path).
+    # ------------------------------------------------------------------
+
+    def upsert_module_from_ingestion(
+            course_id: str,
+            module_id: str,
+            content_s3_key: str,
+            content_type: str,
+            domain: str,
+            difficulty: str,
+            ingestion_status: str,
+            title: str = None,
+            now: str = None,
+    ) -> None:
+        """
+        Upsert a MODULE# record from the CPI ingestion path.
+
+        Key:
+            PK = COURSE#{course_id}
+            SK = MODULE#{module_id}
+
+        Upsert behaviour, atomic single update_item call:
+            - content_s3_key, content_type, ingestion_status, domain,
+              difficulty, updated_at  — always overwritten (SET)
+            - title                  — only set if provided (CPI discovery
+              methods don't always have a real title — see s3_plugin.py's
+              title-resolution note); if_not_exists() so a later ingestion
+              run never blanks out a title the teacher already set
+            - status, entity_type, created_at, created_by — set ONLY on
+              first write (if_not_exists / attribute_not_exists), so a
+              re-ingestion run never resets an already-published module
+              back to a draft state or loses its original creation record.
+
+        Why not create_module() + update_module()?
+            create_module() unconditionally sets status="draft" and
+            ingestion_status="pending" — wrong for re-ingestion of an
+            already-published module. update_module() has no parameters for
+            content_s3_key/ingestion_status/domain/difficulty at all. A
+            conditional upsert in one call is the correct primitive here,
+            not two existing functions bolted together.
+        """
+        # All attribute names are aliased via ExpressionAttributeNames on
+        # principle, not just the ones known to collide today -- "domain" and
+        # "status" are DynamoDB reserved words (caught by a real moto-backed
+        # test, not guessed), and the reserved-word list (~570 words) is
+        # large enough that "happens not to collide today" isn't a safe bet
+        # for whatever field gets added to this function next.
+        names = {
+            "#s3key": "content_s3_key", "#ctype": "content_type", "#ing": "ingestion_status",
+            "#dom": "domain", "#diff": "difficulty", "#u": "updated_at",
+            "#et": "entity_type", "#ca": "created_at", "#s": "status", "#t": "title",
+        }
+        update_parts = [
+            "#s3key = :s3key",
+            "#ctype = :ctype",
+            "#ing = :ing",
+            "#dom = :dom",
+            "#diff = :diff",
+            "#u = :u",
+            "#et = if_not_exists(#et, :et)",
+            "#ca = if_not_exists(#ca, :now)",
+            "#s = if_not_exists(#s, :draft)",
+        ]
+        values = {
+            ":s3key": content_s3_key,
+            ":ctype": content_type,
+            ":ing": ingestion_status,
+            ":dom": domain,
+            ":diff": difficulty,
+            ":u": now,
+            ":et": "MODULE",
+            ":now": now,
+            ":draft": "draft",
+        }
+
+        if title is not None:
+            update_parts.append("#t = if_not_exists(#t, :t)")
+            values[":t"] = title
+
+        kwargs = {
+            "Key": {"PK": f"COURSE#{course_id}", "SK": f"MODULE#{module_id}"},
+            "UpdateExpression": "SET " + ", ".join(update_parts),
+            "ExpressionAttributeValues": values,
+            "ExpressionAttributeNames": names,
+        }
+
+        try:
+            table.update_item(**kwargs)
+        except ClientError as e:
+            error_code = e.response["Error"]["Code"]
+            logger.error("DynamoDB upsert_module_from_ingestion failed", extra={
+                "error_code": error_code,
+                "course_id": course_id,
+                "module_id": module_id,
+            })
+            raise e

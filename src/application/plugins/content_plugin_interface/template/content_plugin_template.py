@@ -13,11 +13,17 @@
 # limitations under the License.
 
 from application.plugins.content_plugin_interface.base import (
-    ContentPluginInterface, CPIRequest, CPIContent
+    ContentPlugin,
+    ContentNotFoundError,
+    CPIContent,
+    CPIMetadata,
+    CPIIngestionResult,
+    ContentType,
+    IngestionStatus,
 )
 
 
-class CustomCMSPlugin(ContentPluginInterface):
+class CustomCMSPlugin(ContentPlugin):
     """
     Template for building a custom CMS plugin for CampusIQ.
 
@@ -26,86 +32,104 @@ class CustomCMSPlugin(ContentPluginInterface):
 
     Steps to implement:
     1. Rename this class to match your CMS (e.g. MoodlePlugin)
-    2. Implement all five methods below
-    3. Each method receives a CPIRequest and must return the
-       specified type
-    4. Add the Apache 2.0 license header to this file
-    5. Register your plugin in campusiq.config.json
+    2. Implement all SIX methods below (fetch_content, search_content,
+       list_courses, list_modules, get_metadata, ingest_content) —
+       list_modules exists specifically so a freshly-connected plugin
+       can discover pre-existing content it has no other way to find
+       (fetch_content requires an already-known module_id)
+    3. Each method takes typed individual arguments, NOT a single
+       request object — every plugin implements the exact same
+       signatures as ContentPlugin (base.py); don't invent your own
+    4. Raise ContentNotFoundError (not a generic exception) when
+       content genuinely doesn't exist — callers rely on being able to
+       catch this one consistently across every plugin
+    5. Add the Apache 2.0 license header to this file
+    6. Register your plugin in campusiq.config.json under
+       plugins.<your_plugin_name> — that block is exactly what gets
+       passed to __init__ below
 
     See docs/cms-plugin-guide/ for full documentation.
     """
 
     def __init__(self, config: dict):
         """
-        Initialise your plugin with configuration from
-        campusiq.config.json.
+        Initialise your plugin from its config block in
+        campusiq.config.json (plugins.<your_plugin_name>). Standardised
+        across every plugin so a plugin registry can construct any of
+        them the same way — PluginClass(config=plugin_config_block) —
+        without special-casing each CMS's constructor.
+
+        Validate what you need here and fail loudly (raise ValueError)
+        on a missing required key, rather than letting a bad config
+        surface as a confusing error later, mid-request.
 
         Args:
-            config: Plugin-specific config block from
-                    campusiq.config.json under plugins.<your_plugin>
+            config: this plugin's own config block only — e.g. for a
+                    plugin needing an API endpoint and key, something
+                    like {"base_url": "...", "api_key": "..."}
         """
         self.config = config
 
-    def fetch_content(self, request: CPIRequest) -> CPIContent:
+    def fetch_content(self, course_id: str, module_id: str) -> CPIContent:
         """
         Fetch a single content item from your CMS by course and
-        module ID.
-
-        Args:
-            request: CPIRequest with course_id and module_id set
-
-        Returns:
-            CPIContent — standardised content object
+        module ID. Raise ContentNotFoundError if it doesn't exist.
         """
         raise NotImplementedError
 
-    def search_content(self, request: CPIRequest) -> list[CPIContent]:
-        """
-        Search for content items matching a query string.
-
-        Args:
-            request: CPIRequest with query and optional filters set
-
-        Returns:
-            List of CPIContent objects matching the query
-        """
+    def search_content(self, query: str, filters: dict | None = None) -> list[CPIContent]:
+        """Search for content items matching a query string."""
         raise NotImplementedError
 
-    def list_courses(self, request: CPIRequest) -> list[dict]:
+    def list_courses(self) -> list[dict]:
         """
         List all available courses from your CMS.
 
-        Args:
-            request: CPIRequest with optional filters
-
         Returns:
-            List of dicts with at minimum: course_id, title,
-            description, domain
+            List of dicts with at minimum: course_id, title. No typed
+            dataclass is specified for this — a plain dict is
+            deliberate (see base.py's design note on why list_courses
+            and list_modules return dicts, not a new CPICourse type).
         """
         raise NotImplementedError
 
-    def get_metadata(self, request: CPIRequest) -> dict:
+    def list_modules(self, course_id: str) -> list[dict]:
         """
-        Return metadata for a specific content item.
-
-        Args:
-            request: CPIRequest with course_id and module_id set
+        List all modules/content items within a given course. This is
+        what makes initial sync/backfill possible — without it, a
+        plugin has no way to discover content in a course it hasn't
+        seen before.
 
         Returns:
-            Dict with content metadata — domain, difficulty,
-            content_type, last_updated
+            List of dicts with at minimum: module_id, title,
+            content_type.
         """
         raise NotImplementedError
 
-    def ingest_content(self, request: CPIRequest) -> dict:
+    def get_metadata(self, content_id: str) -> CPIMetadata:
         """
-        Trigger ingestion of content into the CampusIQ
-        knowledge base pipeline.
-
-        Args:
-            request: CPIRequest with course_id and module_id set
+        Return metadata for a specific content item without fetching
+        its full body. Raise ContentNotFoundError if it doesn't exist.
 
         Returns:
-            Dict with ingestion status — job_id, status, message
+            CPIMetadata — domain/difficulty should be None if your CMS
+            genuinely doesn't carry that information, rather than
+            guessing a default. domain in particular drives Bedrock
+            Guardrails profile selection downstream, so a wrong guess
+            is a safety-relevant bug, not a cosmetic one.
+        """
+        raise NotImplementedError
+
+    def ingest_content(self, course_id: str, module_id: str) -> CPIIngestionResult:
+        """
+        Trigger ingestion of a content item into the CampusIQ
+        knowledge base pipeline — pulls from your CMS and writes the
+        result into CampusIQ's own store.
+
+        Returns:
+            CPIIngestionResult — module_id, s3_key, ingestion_status,
+            and on failure, error_message (return a FAILED result
+            rather than raising, so a bulk sync run can report partial
+            failures instead of aborting entirely).
         """
         raise NotImplementedError
