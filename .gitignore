@@ -24,3 +24,6 @@ tools/personalize-bootstrap/batch_output.json
 # Ad-hoc Lambda invoke test scratch files
 response.json
 test_gap_detected_event.json
+output.json
+tools/personalize-bootstrap/*.csv
+tools/personalize-bootstrap/*.json
