@@ -63,6 +63,12 @@ class CourseStatusEnum(str, Enum):
     ARCHIVED  = "archived"
 
 
+class ModuleStatusEnum(str, Enum):
+    DRAFT     = "draft"
+    PUBLISHED = "published"
+    ARCHIVED  = "archived"
+
+
 class RoleEnum(str, Enum):
     STUDENT = "STUDENT"
     TEACHER = "TEACHER"
@@ -207,7 +213,7 @@ class UpdateModuleRequest(BaseModel):
     title:             Optional[str]              = Field(None, min_length=3, max_length=200)
     estimated_minutes: Optional[int]              = Field(None, ge=1, le=600)
     prerequisites:     Optional[list[str]]        = None
-    status:            Optional[CourseStatusEnum] = None
+    status:            Optional[ModuleStatusEnum] = None
 
 
 class ModuleSummary(BaseModel):
@@ -215,7 +221,7 @@ class ModuleSummary(BaseModel):
     module_id:          str
     title:              str
     content_type:       ContentTypeEnum
-    status:             CourseStatusEnum
+    status:             ModuleStatusEnum
     estimated_minutes:  Optional[int]   = None
     prerequisites:      list[str]       = Field(default_factory=list)
     quiz_id:            Optional[str]   = None
@@ -226,7 +232,7 @@ class ModuleResponse(BaseModel):
     module_id:         str
     title:             str
     content_type:      ContentTypeEnum
-    status:            CourseStatusEnum
+    status:            ModuleStatusEnum
     content_url:       Optional[str]          = None   # pre-signed S3 URL for PDF
     video_url:         Optional[str]          = None   # CloudFront HLS URL
     transcript_url:    Optional[str]          = None   # WebVTT S3 key
@@ -238,14 +244,15 @@ class ModuleResponse(BaseModel):
 
 class ModuleListResponse(BaseModel):
     """GET /api/v1/courses/{courseId}/modules"""
-    modules: list[ModuleSummary]
+    modules:     list[ModuleSummary]
+    next_cursor: Optional[str] = None
 
 
 class CreateModuleResponse(BaseModel):
     """POST /api/v1/courses/{courseId}/modules — 201"""
     module_id:        str
     title:            str
-    status:           CourseStatusEnum    = CourseStatusEnum.DRAFT
+    status:           ModuleStatusEnum    = ModuleStatusEnum.DRAFT
     ingestion_status: IngestionStatusEnum = IngestionStatusEnum.PENDING
 
 class UpdateModuleResponse(BaseModel):
@@ -671,19 +678,12 @@ class LearningPathResponse(BaseModel):
 # TEACHER SCHEMAS
 # ─────────────────────────────────────────────────────
 
-class TeacherCourseSummary(BaseModel):
-    course_id:    str
-    title:        str
-    domain:       DomainEnum
-    student_count: int
-    at_risk_count: int
-    avg_mastery:   float
-
-
-class TeacherCoursesResponse(BaseModel):
-    """GET /api/v1/teachers/me/courses"""
-    courses: list[TeacherCourseSummary]
-
+# NOTE: TeacherCourseSummary / TeacherCoursesResponse used to be defined
+# here. Removed (Aug 2026) -- dead code, silently shadowed by the real
+# definitions near the bottom of this file (CourseSummaryForTeacher /
+# TeacherCoursesResponse), confirmed by checking what teacher.py actually
+# imports. Python let the second definition override the first at import
+# time with no error, so this was invisible until traced deliberately.
 
 class AtRiskStudent(BaseModel):
     student_id: str
