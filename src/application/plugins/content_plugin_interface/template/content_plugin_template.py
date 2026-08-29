@@ -86,10 +86,11 @@ class CustomCMSPlugin(ContentPlugin):
         List all available courses from your CMS.
 
         Returns:
-            List of dicts with at minimum: course_id, title. No typed
-            dataclass is specified for this — a plain dict is
-            deliberate (see base.py's design note on why list_courses
-            and list_modules return dicts, not a new CPICourse type).
+            List of dicts with at minimum: course_id, title. A plain
+            dict, not a typed dataclass — no CPICourse type exists;
+            list_courses and list_modules return dicts deliberately
+            (see base.py) rather than introduce a new type without a
+            specified need.
         """
         raise NotImplementedError
 

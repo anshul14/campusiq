@@ -9,15 +9,13 @@
 """
 Content Provider Interface (CPI) — src/application/plugins/content_plugin_interface/base.py
 
-Defines the standard contract every CMS plugin must implement. This is
-the boundary the platform is built against — CampusIQ's AI layer only
-ever talks to CPIContent objects and never needs to know which CMS (or
-none at all, for the S3 default) produced them. This is what makes
-CampusIQ a framework rather than a platform: the AI layer works without
-any CMS-specific modification.
+Defines the standard contract every CMS plugin implements. This is the
+boundary the platform is built against — CampusIQ's AI layer only ever
+talks to CPIContent objects and never needs to know which CMS (or none
+at all, for the S3 default) produced them. A new CMS integration means
+implementing this contract; no other code in the platform changes.
 
-Six required actions per plugin (ARCHITECTURE.md 4.1, plus list_modules
-added Aug 2026 — see note below):
+Six required methods:
     fetch_content    — a single content item by course + module ID
     search_content   — content items matching a query string
     list_courses     — all available courses from the CMS
@@ -26,33 +24,24 @@ added Aug 2026 — see note below):
                         fetching the full body
     ingest_content   — triggers ingestion into the KB pipeline
 
-DESIGN NOTE — why list_modules was added: the original 5-method contract
-had no way to enumerate what content exists inside a course you haven't
-seen before — fetch_content requires an already-known module_id, which a
-freshly-connected plugin doesn't have. This blocks initial sync/backfill
-entirely: a fresh deployment connecting to a CMS with pre-existing
-content (e.g. Google Classroom, where the webhook is delta-only and
-never fires for content that existed before registration) would have no
-way to discover and ingest that backlog.
+list_modules exists because fetch_content requires an already-known
+module_id, which a freshly-connected plugin doesn't have — without it,
+there is no way to discover and back-fill content that existed before a
+CMS connection was registered (e.g. Google Classroom's coursework
+webhook is delta-only and never fires for pre-existing content).
 
-DESIGN NOTE — CPIRequest's role: the spec describes CPIRequest as "the
-standard request" carrying action/course_id/module_id/query/filters/
-request_id together, but doesn't specify whether each method takes a
-single CPIRequest or typed individual arguments. This implementation
-uses typed individual arguments per method (clearer, self-documenting
-for a small fixed set of actions) and treats CPIRequest as a tracing/
-logging envelope a caller (e.g. the ingestion Lambda) can construct
-alongside a call, not the sole parameter every plugin method receives.
+Every method takes typed individual arguments rather than a single
+request object, since the action set is small and fixed — this keeps
+each method's signature self-documenting. Callers that need a tracing/
+logging envelope around a call (e.g. the ingestion Lambda) construct a
+CPIRequest alongside the call; it is not the parameter every method
+receives.
 
-S3 PATH CONVENTION (resolved Aug 2026 — ARCHITECTURE.md 4.2's documented
-convention wins over what a couple of pre-existing test fixtures happen
-to use): {domain}/{courseId}/modules/{moduleId}/content.{ext}
-Two existing test modules (week3-newtons-laws, week5-energy-conservation)
-predate this decision and use a flatter path without the modules/
-segment — harmless, since nothing in the codebase reconstructs a content
-path from course_id/module_id; every read goes through the module's own
-stored content_s3_key. New content created via any plugin from here on
-follows the nested convention.
+S3 key convention: {domain}/{courseId}/modules/{moduleId}/content.{ext}
+(ARCHITECTURE.md 4.2). A small number of pre-existing test fixtures use
+a flatter path without the modules/ segment — harmless, since nothing in
+the codebase reconstructs a content path from course_id/module_id; every
+read goes through the module's own stored content_s3_key.
 """
 
 from __future__ import annotations
@@ -84,18 +73,16 @@ class IngestionStatus(str, Enum):
 @dataclass
 class CPIMetadata:
     """
-    Typed metadata every CPIContent carries — replaces a loosely typed
-    dict per the Master Reference's "Updated Base Class" note.
+    Typed metadata every CPIContent carries.
 
-    domain/difficulty are Optional (Aug 2026 amendment, S3 plugin scoping
-    session): a plugin should return None when its source doesn't actually
-    carry this information, rather than fake a default. Faking a default
-    (e.g. "university" when unknown) would silently mask a real upstream
-    gap — domain in particular drives Bedrock Guardrails profile selection,
-    so a wrong guess is a safety-relevant bug, not a cosmetic one. Callers
-    that need a guaranteed value (e.g. ingest_content(), which already
-    writes to DynamoDB) are expected to fall back to the course's own
-    COURSE# record when these come back None.
+    domain/difficulty are Optional: a plugin returns None when its
+    source doesn't actually carry this information, rather than
+    defaulting to a guess. A wrong default would silently mask a real
+    upstream gap — domain in particular drives Bedrock Guardrails
+    profile selection, so an incorrect guess is a safety-relevant bug,
+    not a cosmetic one. Callers that need a guaranteed value (e.g.
+    ingest_content(), which already writes to DynamoDB) fall back to
+    the course's own COURSE# record when these come back None.
     """
     domain: str | None            # e.g. "university", "k12", "corporate" — None if unknown
     difficulty: str | None        # e.g. "beginner", "intermediate", "advanced" — None if unknown
