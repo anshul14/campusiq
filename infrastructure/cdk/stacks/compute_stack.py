@@ -170,10 +170,28 @@ class ComputeStack(Stack):
             entry="src/application/lambdas/courses",
             memory=512,
             timeout=29,
-            extra_env={},
+            extra_env={
+                # save_text_content/presign/complete write to S3, and
+                # update_module emits ModulePublished — this Lambda
+                # needs both S3 and EventBridge access.
+                "CONTENT_BUCKET_NAME": cdk.Fn.import_value(f"campusiq-{self.deployment_name}-content-bucket"),
+                "EVENT_BUS_NAME": self.event_bus.event_bus_name,
+            },
         )
         # DynamoDB read + write for course and module records
         self.table.grant_read_write_data(self.courses_lambda)
+        # S3 read (presign/complete/head_object) + write (save_text_content,
+        # complete_content_upload's metadata-stamping copy_object)
+        courses_content_bucket_arn = cdk.Fn.import_value(f"campusiq-{self.deployment_name}-content-bucket-arn")
+        self.courses_lambda.add_to_role_policy(
+            iam.PolicyStatement(
+                effect=iam.Effect.ALLOW,
+                actions=["s3:GetObject", "s3:PutObject"],
+                resources=[f"{courses_content_bucket_arn}/*"],
+            )
+        )
+        # EventBridge put events — emit_module_published() on Publish
+        self.event_bus.grant_put_events_to(self.courses_lambda)
 
         # ------------------------------------------------------------------
         # Students Lambda
@@ -361,7 +379,12 @@ class ComputeStack(Stack):
             memory=512,
             timeout=90,
             extra_env={
-                "CONTENT_BUCKET_NAME": cdk.Fn.import_value("campusiq-vnit-dev-content-bucket"),
+                # Uses self.deployment_name dynamically, matching
+                # storage_stack.py's export name — a hardcoded
+                # deployment name here would silently break
+                # (Fn.import_value pointing at a nonexistent export)
+                # on any deployment other than the one hardcoded.
+                "CONTENT_BUCKET_NAME": cdk.Fn.import_value(f"campusiq-{self.deployment_name}-content-bucket"),
             },
         )
         self.table.grant_read_write_data(self.content_adaptation_lambda)
@@ -373,7 +396,7 @@ class ComputeStack(Stack):
             )
         )
         # S3 read (fetch original content) + write (save adapted variant)
-        content_bucket_arn = cdk.Fn.import_value("campusiq-vnit-dev-content-bucket-arn")
+        content_bucket_arn = cdk.Fn.import_value(f"campusiq-{self.deployment_name}-content-bucket-arn")
         self.content_adaptation_lambda.add_to_role_policy(
             iam.PolicyStatement(
                 effect=iam.Effect.ALLOW,
@@ -386,6 +409,47 @@ class ComputeStack(Stack):
                 effect=iam.Effect.ALLOW,
                 actions=["aws-marketplace:ViewSubscriptions", "aws-marketplace:Subscribe"],
                 resources=["*"],  # account-level marketplace actions, not resource-scopable
+            )
+        )
+
+        # ------------------------------------------------------------------
+        # Ingestion Lambda
+        # Trigger: EventBridge ModulePublished (Path A) and
+        #          CMSCourseSyncRequested (Path B, admin backfill)
+        # Purpose: The piece that actually invokes CPI plugin methods —
+        #          resolves each course's cms_source to a plugin, calls
+        #          plugin.ingest_content(). S3-read only (S3Plugin never
+        #          writes to S3 -- content already lives there for the
+        #          native/S3 case; Google Classroom/Strapi plugins, once
+        #          built, will need write access too -- not added yet
+        #          since those plugins don't exist).
+        # Memory: 512MB
+        # Timeout: 60s — single-module publish is fast; course-level
+        #          backfill (list_modules -> ingest_content per module)
+        #          is the slower case, could need bumping once real
+        #          course sizes are known.
+        # ------------------------------------------------------------------
+        self.ingestion_lambda = self._event_lambda(
+            name="Ingestion",
+            entry="src/application/lambdas/ingestion",
+            memory=512,
+            timeout=60,
+            extra_env={
+                "CONTENT_BUCKET_NAME": cdk.Fn.import_value(f"campusiq-{self.deployment_name}-content-bucket"),
+            },
+        )
+        self.table.grant_read_write_data(self.ingestion_lambda)
+        ingestion_content_bucket_arn = cdk.Fn.import_value(f"campusiq-{self.deployment_name}-content-bucket-arn")
+        self.ingestion_lambda.add_to_role_policy(
+            iam.PolicyStatement(
+                effect=iam.Effect.ALLOW,
+                # s3:GetObject covers both GetObject and HeadObject calls —
+                # there's no separate "s3:HeadObject" IAM action, it would
+                # just be a dead, meaningless entry in the policy.
+                # s3:ListBucket is separate (bucket-level, not object-level)
+                # and needed for list_objects_v2 (list_courses/list_modules).
+                actions=["s3:GetObject", "s3:ListBucket"],
+                resources=[ingestion_content_bucket_arn, f"{ingestion_content_bucket_arn}/*"],
             )
         )
 
@@ -536,6 +600,36 @@ class ComputeStack(Stack):
                 detail_type=["GapDetected"],
             ),
             targets=[targets.LambdaFunction(self.content_adaptation_lambda)],
+        )
+
+        # ModulePublished (Path A — a teacher publishes one module) → Ingestion Lambda
+        events.Rule(
+            self,
+            "ModulePublishedRule",
+            event_bus=self.event_bus,
+            rule_name=f"campusiq-{self.deployment_name}-module-published",
+            description="Route ModulePublished events to the Ingestion Lambda",
+            event_pattern=events.EventPattern(
+                source=["campusiq.courses"],
+                detail_type=["ModulePublished"],
+            ),
+            targets=[targets.LambdaFunction(self.ingestion_lambda)],
+        )
+
+        # CMSCourseSyncRequested (Path B — admin-triggered course backfill) → Ingestion Lambda
+        # Source/emitter (admin.py's sync_cms endpoint) isn't built yet —
+        # this rule is real and correct as soon as that handler emits it.
+        events.Rule(
+            self,
+            "CMSCourseSyncRequestedRule",
+            event_bus=self.event_bus,
+            rule_name=f"campusiq-{self.deployment_name}-cms-course-sync-requested",
+            description="Route CMSCourseSyncRequested events to the Ingestion Lambda",
+            event_pattern=events.EventPattern(
+                source=["campusiq.admin"],
+                detail_type=["CMSCourseSyncRequested"],
+            ),
+            targets=[targets.LambdaFunction(self.ingestion_lambda)],
         )
 
     # ======================================================================

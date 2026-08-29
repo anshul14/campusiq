@@ -9,17 +9,13 @@
 """
 EventBridge emission service — src/application/services/events.py
 
-New file, not an addition to dynamodb.py — putting events isn't a
-DynamoDB concern, bundling it in there would be the same kind of
-category mixing already avoided elsewhere in this codebase.
+Separate from dynamodb.py — putting events isn't a DynamoDB concern.
 
-Reads EVENTBRIDGE_BUS_NAME directly via os.environ[...], not
-os.getenv(..., "some-fallback-name") — a hardcoded fallback bus name is
-exactly the bug already hit once on this project (Stream Processor's
-EVENTBRIDGE_BUS_NAME typo + hardcoded fallback pointing at a bus that
-didn't exist, root-caused via a confusing AccessDeniedException). A
-missing env var should fail loudly and immediately, not silently degrade
-to writing at the wrong bus.
+Reads EVENT_BUS_NAME directly via os.environ[...], not os.getenv(...,
+"some-fallback-name"). A hardcoded fallback bus name risks silently
+writing events to a bus that doesn't exist, with no error until
+something downstream notices events are missing. A missing env var
+should fail loudly and immediately instead.
 """
 
 from __future__ import annotations
@@ -48,7 +44,7 @@ def emit_module_published(course_id: str, module_id: str) -> None:
     write already succeeded and returned — this is the async half, not
     on the request's critical path.
     """
-    bus_name = os.environ["EVENTBRIDGE_BUS_NAME"]
+    bus_name = os.environ["EVENT_BUS_NAME"]
 
     response = eventbridge_client.put_events(
         Entries=[{
@@ -59,10 +55,9 @@ def emit_module_published(course_id: str, module_id: str) -> None:
         }]
     )
 
-    # put_events can partially fail per-entry rather than raise — same
-    # shape as Stream Processor's batchItemFailures handling (ADR-017).
-    # With only one entry here, "partial" means "failed", so raise rather
-    # than log-and-continue.
+    # put_events can fail per-entry rather than raising an exception.
+    # With only one entry here, "partial" failure means total failure,
+    # so raise rather than log-and-continue.
     if response.get("FailedEntryCount", 0) > 0:
         failure = response["Entries"][0]
         logger.error("EventBridge put_events failed", extra={

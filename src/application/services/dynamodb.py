@@ -1083,32 +1083,19 @@ def update_module_adapted_content_key(course_id: str, module_id: str, adapted_ke
     )
 
 
-# ------------------------------------------------------------------
-# ADDITION for dynamodb.py — supports ContentPlugin.ingest_content()
-#
-# Neither create_module() nor update_module() (existing functions)
-# accept content_s3_key, ingestion_status, domain, or difficulty — the
-# exact fields CPI ingestion needs to write. Rather than retrofit those
-# two (both are the teacher-authored-module write path, already in use
-# elsewhere, no driving bug to justify touching them — same reasoning
-# already applied to the Gap Detection/Recommendation dynamodb.py
-# cleanup item), this is a new, dedicated function for the ingestion
-# write path specifically.
+# upsert_module_from_ingestion() is a dedicated write path for CPI
+# ingestion, separate from create_module()/update_module(). Neither of
+# those accepts content_s3_key, ingestion_status, domain, or difficulty,
+# and neither should: they're the teacher-authored-module write path,
+# with different semantics (create_module() unconditionally sets
+# status="draft" and ingestion_status="pending", which is wrong for
+# re-ingesting an already-published module).
 #
 # Handles both cases in one call: a brand-new module discovered during
-# backfill (Path B — see s3_plugin.py) gets created; a module ingest_content
-# is called on again (re-sync) gets its content_s3_key/ingestion_status
-# refreshed without clobbering fields ingestion doesn't own (title,
-# prerequisites, status — those stay under the teacher-authored/
-# create_module path).
-#
-# BUGFIX (Aug 2026): this function was previously nested inside
-# update_module_adapted_content_key() above -- a copy-paste indentation
-# slip that made db.upsert_module_from_ingestion(...) raise AttributeError
-# at runtime, since Python never exposed it as a module-level name.
-# S3Plugin.ingest_content() calling this would have failed the first
-# time it actually ran. Dedented to module level, content unchanged.
-# ------------------------------------------------------------------
+# backfill gets created; re-ingesting an existing module refreshes its
+# content_s3_key/ingestion_status without clobbering fields ingestion
+# doesn't own (title, prerequisites, status stay under the
+# teacher-authored path).
 
 def upsert_module_from_ingestion(
         course_id: str,
@@ -1148,12 +1135,11 @@ def upsert_module_from_ingestion(
         conditional upsert in one call is the correct primitive here,
         not two existing functions bolted together.
     """
-    # All attribute names are aliased via ExpressionAttributeNames on
-    # principle, not just the ones known to collide today -- "domain" and
-    # "status" are DynamoDB reserved words (caught by a real moto-backed
-    # test, not guessed), and the reserved-word list (~570 words) is
-    # large enough that "happens not to collide today" isn't a safe bet
-    # for whatever field gets added to this function next.
+    # Every attribute name is aliased via ExpressionAttributeNames, not
+    # just the ones known to collide today -- "domain" and "status" are
+    # DynamoDB reserved words, and the reserved-word list (~570 words)
+    # is large enough that "happens not to collide today" isn't a safe
+    # bet for whatever field gets added to this function next.
     names = {
         "#s3key": "content_s3_key", "#ctype": "content_type", "#ing": "ingestion_status",
         "#dom": "domain", "#diff": "difficulty", "#u": "updated_at",
@@ -1204,28 +1190,24 @@ def upsert_module_from_ingestion(
         })
         raise e
 
-# ------------------------------------------------------------------
-# ADDITION for dynamodb.py — the synchronous half of the module Publish
-# action. Pairs with events.emit_module_published() for the async half.
-# ------------------------------------------------------------------
+# publish_module() is the synchronous half of the module Publish action,
+# paired with events.emit_module_published() for the async half.
 
 def publish_module(course_id: str, module_id: str, now: str) -> None:
     """
     Flips a module to published and marks ingestion as pending. This is
-    ALL the Publish handler does synchronously — it deliberately does
+    all the Publish handler does synchronously — it deliberately does
     NOT touch content_s3_key, content_type, domain, or difficulty. Those
     are the ingestion Lambda's job, via ingest_content()'s idempotent
     upsert (if_not_exists on status/entity_type/created_at means a
-    second write later can't clobber what this one just set). Keeping
-    this function narrow is what makes the Publish handler fast enough
-    to return immediately rather than wait on S3/KB work.
+    later write can't clobber what this one just set). Keeping this
+    function narrow is what lets the Publish handler return immediately
+    rather than wait on S3/KB work.
 
     Raises ValueError if the module doesn't exist — publishing a module
     that was never created is a real error, not a silent no-op.
     """
-    # Every attribute name aliased on principle (established convention
-    # in this file — see upsert_module_from_ingestion's docstring for
-    # why "happens not to collide today" isn't a safe bet).
+    # Attribute names aliased throughout — see upsert_module_from_ingestion.
     try:
         table.update_item(
             Key={"PK": f"COURSE#{course_id}", "SK": f"MODULE#{module_id}"},
@@ -1239,6 +1221,35 @@ def publish_module(course_id: str, module_id: str, now: str) -> None:
         if error_code == "ConditionalCheckFailedException":
             raise ValueError(f"Module not found: course_id={course_id!r} module_id={module_id!r}")
         logger.error("DynamoDB publish_module failed", extra={
+            "error_code": error_code, "course_id": course_id, "module_id": module_id,
+        })
+        raise e
+
+# update_module_content() records that content now exists for a module,
+# separate from publish_module(): authoring content and publishing it
+# are different actions, and saving a draft must never trigger
+# ingestion. ingestion_status is left untouched here -- it only changes
+# via an explicit Publish action.
+
+def update_module_content(course_id: str, module_id: str, content_s3_key: str, content_type: str, now: str) -> None:
+    """
+    Records a module's content location after a successful S3 write —
+    called by save_text_content()/complete_content_upload(). Does NOT
+    touch status or ingestion_status.
+    """
+    try:
+        table.update_item(
+            Key={"PK": f"COURSE#{course_id}", "SK": f"MODULE#{module_id}"},
+            UpdateExpression="SET #cs3 = :key, #ct = :ctype, #u = :now",
+            ConditionExpression="attribute_exists(PK)",
+            ExpressionAttributeNames={"#cs3": "content_s3_key", "#ct": "content_type", "#u": "updated_at"},
+            ExpressionAttributeValues={":key": content_s3_key, ":ctype": content_type, ":now": now},
+        )
+    except ClientError as e:
+        error_code = e.response["Error"]["Code"]
+        if error_code == "ConditionalCheckFailedException":
+            raise ValueError(f"Module not found: course_id={course_id!r} module_id={module_id!r}")
+        logger.error("DynamoDB update_module_content failed", extra={
             "error_code": error_code, "course_id": course_id, "module_id": module_id,
         })
         raise e

@@ -14,9 +14,12 @@ These routes handle CRUD course operations.
 """
 
 import logging
+import os
 from datetime import datetime, timezone
 from uuid import uuid4
 
+import boto3
+from botocore.exceptions import ClientError
 from fastapi import APIRouter, Request, HTTPException
 
 from application.schemas import CourseResponse, CourseListResponse, UpdateCourseResponse, \
@@ -32,6 +35,10 @@ from application.services import dynamodb as db
 from application.services.events import emit_module_published, EventEmitFailedError
 
 logger = logging.getLogger(__name__)
+
+# Module-level client, ADR-012 pattern — created once on cold start.
+s3_client = boto3.client("s3")
+CONTENT_BUCKET = os.environ["CONTENT_BUCKET_NAME"]
 
 router = APIRouter(
     prefix="/courses",
@@ -574,7 +581,51 @@ async def presign_content_upload(
         body: ContentPresignRequest,
         request: Request,
 ) -> ContentPresignResponse:
-    pass
+    authorizer_context = request.state.authorizer
+    role = authorizer_context["role"]
+    user_id = authorizer_context["userId"]
+
+    if role not in ("TEACHER", "ADMIN"):
+        raise HTTPException(status_code=403, detail={
+            "code": "FORBIDDEN", "message": "Only teachers and admins can upload module content"
+        })
+
+    course = _verify_course_access(role=role, user_id=user_id, course_id=course_id)
+
+    if body.file_type == "video":
+        # Genuinely undesigned, not a stub — the video pipeline
+        # (raw-uploads/ -> MediaConvert -> Transcribe -> HLS/WebVTT) has
+        # no confirmed S3 key convention yet. Rejecting explicitly
+        # rather than guessing at an unverified path structure.
+        raise HTTPException(status_code=501, detail={
+            "code": "VIDEO_NOT_YET_SUPPORTED",
+            "message": "Video upload is not yet implemented — the ingestion pipeline for video is still undesigned"
+        })
+
+    if body.file_type != "pdf":
+        raise HTTPException(status_code=400, detail={
+            "code": "UNSUPPORTED_FILE_TYPE",
+            "message": f"Unsupported file_type {body.file_type!r} — only 'pdf' is currently supported"
+        })
+
+    domain = course["domain"]
+    s3_key = f"{domain}/{course_id}/modules/{module_id}/content.pdf"
+
+    try:
+        upload_url = s3_client.generate_presigned_url(
+            "put_object",
+            Params={"Bucket": CONTENT_BUCKET, "Key": s3_key, "ContentType": "application/pdf"},
+            ExpiresIn=900,
+        )
+    except ClientError as e:
+        logger.error("Failed to generate presigned upload URL", extra={
+            "course_id": course_id, "module_id": module_id, "error": str(e),
+        })
+        raise HTTPException(status_code=500, detail={
+            "code": "PRESIGN_FAILED", "message": "Failed to generate upload URL"
+        })
+
+    return ContentPresignResponse(upload_url=upload_url, s3_key=s3_key, expires_in_seconds=900)
 
 
 @router.post("/{course_id}/modules/{module_id}/content/complete", response_model=ContentCompleteResponse)
@@ -584,7 +635,80 @@ async def complete_content_upload(
         body: ContentCompleteRequest,
         request: Request,
 ) -> ContentCompleteResponse:
-    pass
+    authorizer_context = request.state.authorizer
+    role = authorizer_context["role"]
+    user_id = authorizer_context["userId"]
+    now = datetime.now(timezone.utc).isoformat()
+
+    if role not in ("TEACHER", "ADMIN"):
+        raise HTTPException(status_code=403, detail={
+            "code": "FORBIDDEN", "message": "Only teachers and admins can upload module content"
+        })
+
+    course = _verify_course_access(role=role, user_id=user_id, course_id=course_id)
+
+    # Step 1 - verify the object actually exists. A client calling
+    # "complete" doesn't prove the browser's PUT actually succeeded —
+    # confirm server-side rather than trust the request.
+    try:
+        s3_client.head_object(Bucket=CONTENT_BUCKET, Key=body.s3_key)
+    except ClientError as e:
+        error_code = e.response["Error"]["Code"]
+        if error_code in ("404", "NoSuchKey", "NotFound"):
+            raise HTTPException(status_code=400, detail={
+                "code": "UPLOAD_NOT_FOUND",
+                "message": f"No object found at s3_key={body.s3_key!r} — did the upload actually complete?"
+            })
+        logger.error("head_object failed during content completion", extra={
+            "course_id": course_id, "module_id": module_id, "error": str(e),
+        })
+        raise HTTPException(status_code=500, detail={
+            "code": "CONTENT_COMPLETE_FAILED", "message": "Failed to verify upload"
+        })
+
+    # Step 2 - stamp domain/difficulty metadata server-side. S3 object
+    # metadata is immutable except via a copy — this is a self-copy with
+    # MetadataDirective=REPLACE, same principle as save_text_content:
+    # the backend controls domain/difficulty, never the client.
+    domain = course["domain"]
+    difficulty = course.get("difficulty", "")
+    try:
+        s3_client.copy_object(
+            Bucket=CONTENT_BUCKET, Key=body.s3_key,
+            CopySource={"Bucket": CONTENT_BUCKET, "Key": body.s3_key},
+            Metadata={"domain": domain, "difficulty": difficulty},
+            MetadataDirective="REPLACE",
+        )
+    except ClientError as e:
+        logger.error("Failed to stamp metadata on uploaded content", extra={
+            "course_id": course_id, "module_id": module_id, "error": str(e),
+        })
+        raise HTTPException(status_code=500, detail={
+            "code": "CONTENT_COMPLETE_FAILED", "message": "Failed to finalise upload"
+        })
+
+    # Step 3 - record the S3 key. Same as save_text_content: does NOT
+    # touch status/ingestion_status — uploading is not publishing.
+    try:
+        db.update_module_content(
+            course_id=course_id, module_id=module_id,
+            content_s3_key=body.s3_key, content_type=body.content_type.value, now=now,
+        )
+    except ValueError:
+        raise HTTPException(status_code=404, detail={
+            "code": "MODULE_NOT_FOUND", "message": f"Module {module_id} not found"
+        })
+    except Exception as e:
+        logger.error("Failed to update module content record", extra={
+            "course_id": course_id, "module_id": module_id, "error": str(e),
+        })
+        raise HTTPException(status_code=500, detail={
+            "code": "CONTENT_COMPLETE_FAILED", "message": "Failed to finalise upload"
+        })
+
+    # ingestion_status returned as "pending", not the schema's PROCESSING
+    # default — nothing is ingesting yet, that only starts at Publish.
+    return ContentCompleteResponse(module_id=module_id, ingestion_status="pending")
 
 
 @router.put("/{course_id}/modules/{module_id}/content/text", response_model=SaveTextContentResponse)
@@ -594,4 +718,68 @@ async def save_text_content(
         body: SaveTextContentRequest,
         request: Request,
 ) -> SaveTextContentResponse:
-    pass
+    authorizer_context = request.state.authorizer
+    role = authorizer_context["role"]
+    user_id = authorizer_context["userId"]
+    now = datetime.now(timezone.utc).isoformat()
+
+    if role not in ("TEACHER", "ADMIN"):
+        raise HTTPException(status_code=403, detail={
+            "code": "FORBIDDEN", "message": "Only teachers and admins can save module content"
+        })
+
+    # Step 1 - verify access (also fetches the course record, which we
+    # need for domain/difficulty below)
+    course = _verify_course_access(role=role, user_id=user_id, course_id=course_id)
+
+    # Step 2 - write to S3. domain/difficulty come from the COURSE#
+    # record looked up server-side here, never from the client — the
+    # module editor never needs a domain field; it's inherited silently
+    # from the course context.
+    domain = course["domain"]
+    difficulty = course.get("difficulty", "")
+    s3_key = f"{domain}/{course_id}/modules/{module_id}/content.md"
+
+    try:
+        s3_client.put_object(
+            Bucket=CONTENT_BUCKET,
+            Key=s3_key,
+            Body=body.content.encode("utf-8"),
+            ContentType="text/markdown",
+            Metadata={"domain": domain, "difficulty": difficulty},
+        )
+    except ClientError as e:
+        logger.error("Failed to write module content to S3", extra={
+            "course_id": course_id, "module_id": module_id, "error": str(e),
+        })
+        raise HTTPException(status_code=500, detail={
+            "code": "CONTENT_SAVE_FAILED", "message": "Failed to save content"
+        })
+
+    # Step 3 - record the S3 key on the module. Deliberately does NOT
+    # touch status/ingestion_status — saving content is not publishing
+    # it. ingestion_status returned here is always "pending", not the
+    # schema's PROCESSING default — nothing is ingesting until an
+    # explicit Publish action fires (the module-level gate).
+    try:
+        db.update_module_content(
+            course_id=course_id, module_id=module_id,
+            content_s3_key=s3_key, content_type="markdown", now=now,
+        )
+    except ValueError:
+        raise HTTPException(status_code=404, detail={
+            "code": "MODULE_NOT_FOUND", "message": f"Module {module_id} not found"
+        })
+    except Exception as e:
+        logger.error("Failed to update module content record", extra={
+            "course_id": course_id, "module_id": module_id, "error": str(e),
+        })
+        raise HTTPException(status_code=500, detail={
+            "code": "CONTENT_SAVE_FAILED", "message": "Failed to save content"
+        })
+
+    return SaveTextContentResponse(
+        module_id=module_id,
+        saved_at=now,
+        ingestion_status="pending",
+    )
