@@ -26,9 +26,10 @@ from application.schemas import CourseResponse, CourseListResponse, UpdateCourse
     GenerateQuizRequest, SaveQuizResponse, SaveQuizRequest, QuizAttemptResponse, SubmitQuizResponse, SubmitQuizRequest, \
     CourseQuizResultsResponse, CourseGapsResponse, DashboardResponse, AtRiskResponse, IngestionStatusResponse, \
     ContentPresignResponse, ContentPresignRequest, ContentCompleteResponse, ContentCompleteRequest, \
-    SaveTextContentResponse, SaveTextContentRequest, CourseStatusEnum, ModuleSummary
+    SaveTextContentResponse, SaveTextContentRequest, CourseStatusEnum, ModuleStatusEnum, ModuleSummary
 from application.schemas import CourseSummary
 from application.services import dynamodb as db
+from application.services.events import emit_module_published, EventEmitFailedError
 
 logger = logging.getLogger(__name__)
 
@@ -327,26 +328,74 @@ async def update_module(
     # Step 1 - first verify access to the course
     _verify_course_access(role=role, user_id=user_id, course_id=course_id)
 
-    # Step 2 - update module
-    try:
-        db.update_module(
-            course_id=course_id,
-            module_id=module_id,
-            title=body.title,
-            estimated_minutes=body.estimated_minutes,
-            prerequisites=body.prerequisites,
-            status=body.status,
-            now=now
-        )
-    except Exception as e:
-        logger.error("Failed to update module", extra={
-            "course_id": course_id,
-            "module_id": module_id,
-            "error": str(e),
-        })
-        raise HTTPException(status_code=500,
-                            detail={"code": "MODULE_UPDATE_FAILED",
-                                    "message": "Failed to update module"})
+    is_publishing = body.status == ModuleStatusEnum.PUBLISHED
+
+    # Step 2 - the publish transition is handled separately from the
+    # generic field-update path below (fast synchronous write, then an
+    # async ModulePublished event) — see events.py / dynamodb.py's
+    # publish_module(). The generic path doesn't know about
+    # ingestion_status or ingestion at all, and shouldn't have to.
+    if is_publishing:
+        try:
+            db.publish_module(course_id=course_id, module_id=module_id, now=now)
+        except ValueError:
+            raise HTTPException(status_code=404, detail={
+                "code": "MODULE_NOT_FOUND",
+                "message": f"Module {module_id} not found"
+            })
+        except Exception as e:
+            logger.error("Failed to publish module", extra={
+                "course_id": course_id, "module_id": module_id, "error": str(e),
+            })
+            raise HTTPException(status_code=500, detail={
+                "code": "MODULE_PUBLISH_FAILED",
+                "message": "Failed to publish module"
+            })
+
+        try:
+            emit_module_published(course_id=course_id, module_id=module_id)
+        except (EventEmitFailedError, Exception) as e:
+            # The DynamoDB write already succeeded and the teacher already
+            # sees "Published" — a failed event emit means ingestion won't
+            # fire automatically, not that the publish itself failed. Log
+            # loudly rather than 500 on a request that actually succeeded.
+            logger.error(
+                "Failed to emit ModulePublished — module is published but "
+                "ingestion will not trigger automatically",
+                extra={"course_id": course_id, "module_id": module_id, "error": str(e)},
+            )
+
+    # Step 3 - any other fields (title/estimated_minutes/prerequisites, or
+    # a non-publish status change like archiving) still go through the
+    # generic path. status is deliberately omitted here when is_publishing
+    # — already handled above, not touched twice in one request.
+    other_fields_present = any([
+        body.title is not None,
+        body.estimated_minutes is not None,
+        body.prerequisites is not None,
+        body.status is not None and not is_publishing,
+    ])
+    if other_fields_present:
+        try:
+            db.update_module(
+                course_id=course_id,
+                module_id=module_id,
+                title=body.title,
+                estimated_minutes=body.estimated_minutes,
+                prerequisites=body.prerequisites,
+                status=None if is_publishing else body.status,
+                now=now
+            )
+        except Exception as e:
+            logger.error("Failed to update module", extra={
+                "course_id": course_id,
+                "module_id": module_id,
+                "error": str(e),
+            })
+            raise HTTPException(status_code=500,
+                                detail={"code": "MODULE_UPDATE_FAILED",
+                                        "message": "Failed to update module"})
+
     return UpdateModuleResponse(
         module_id=module_id,
         updated_at=now,

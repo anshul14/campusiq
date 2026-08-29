@@ -1203,3 +1203,42 @@ def upsert_module_from_ingestion(
             "module_id": module_id,
         })
         raise e
+
+# ------------------------------------------------------------------
+# ADDITION for dynamodb.py — the synchronous half of the module Publish
+# action. Pairs with events.emit_module_published() for the async half.
+# ------------------------------------------------------------------
+
+def publish_module(course_id: str, module_id: str, now: str) -> None:
+    """
+    Flips a module to published and marks ingestion as pending. This is
+    ALL the Publish handler does synchronously — it deliberately does
+    NOT touch content_s3_key, content_type, domain, or difficulty. Those
+    are the ingestion Lambda's job, via ingest_content()'s idempotent
+    upsert (if_not_exists on status/entity_type/created_at means a
+    second write later can't clobber what this one just set). Keeping
+    this function narrow is what makes the Publish handler fast enough
+    to return immediately rather than wait on S3/KB work.
+
+    Raises ValueError if the module doesn't exist — publishing a module
+    that was never created is a real error, not a silent no-op.
+    """
+    # Every attribute name aliased on principle (established convention
+    # in this file — see upsert_module_from_ingestion's docstring for
+    # why "happens not to collide today" isn't a safe bet).
+    try:
+        table.update_item(
+            Key={"PK": f"COURSE#{course_id}", "SK": f"MODULE#{module_id}"},
+            UpdateExpression="SET #s = :published, #ing = :pending, #u = :now",
+            ConditionExpression="attribute_exists(PK)",
+            ExpressionAttributeNames={"#s": "status", "#ing": "ingestion_status", "#u": "updated_at"},
+            ExpressionAttributeValues={":published": "published", ":pending": "pending", ":now": now},
+        )
+    except ClientError as e:
+        error_code = e.response["Error"]["Code"]
+        if error_code == "ConditionalCheckFailedException":
+            raise ValueError(f"Module not found: course_id={course_id!r} module_id={module_id!r}")
+        logger.error("DynamoDB publish_module failed", extra={
+            "error_code": error_code, "course_id": course_id, "module_id": module_id,
+        })
+        raise e
