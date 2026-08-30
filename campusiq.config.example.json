@@ -8,13 +8,8 @@
     "type": "ENTRA_ID",
     "comment": "Options: ENTRA_ID | GOOGLE | SAML"
   },
-  "cms_plugin": {
-    "type": "s3",
-    "comment": "Options: s3 | strapi | contentful | google_classroom | custom",
-    "field_mapping": {}
-  },
-  "domain": {
-    "type": "universities",
-    "comment": "Options: universities | k12 | corporate"
+  "cors": {
+    "allowed_origins": "https://YOUR_NEXTJS_DOMAIN",
+    "comment": "API Gateway CORS allowed origin for your frontend. Falls back to http://localhost:3000 if omitted."
   }
 }

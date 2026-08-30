@@ -72,7 +72,7 @@ class ComputeStack(Stack):
         # ------------------------------------------------------------------
         self.shared_env = {
             "DYNAMODB_TABLE_NAME": table.table_name,
-            "ALLOWED_ORIGINS": config["domain"].get("allowed_origins", "http://localhost:3000"),
+            "ALLOWED_ORIGINS": config.get("cors", {}).get("allowed_origins", "http://localhost:3000"),
             "POWERTOOLS_SERVICE_NAME": f"campusiq-{deployment_name}",
             "LOG_LEVEL": "DEBUG" if "dev" in deployment_name else "INFO",
             "DEPLOYMENT_NAME": deployment_name,
