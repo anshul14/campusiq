@@ -475,8 +475,8 @@ class ComputeStack(Stack):
             layers=[self.deps_layer],
             environment={
                 **self.shared_env,
-                "COGNITO_USER_POOL_ID": "us-east-1_FVyLEJSdV",
-                "COGNITO_CLIENT_ID": "3skm6s2hd2arn9t10fns1ikr5t",
+                "COGNITO_USER_POOL_ID": cdk.Fn.import_value(f"campusiq-{self.deployment_name}-user-pool-id"),
+                "COGNITO_CLIENT_ID": cdk.Fn.import_value(f"campusiq-{self.deployment_name}-user-pool-client-id"),
                 "COGNITO_REGION": self.region,
             },
         )
