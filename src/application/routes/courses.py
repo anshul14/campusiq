@@ -565,7 +565,23 @@ async def get_bedrock_kb_ingestion_status_for_module(
         module_id: str,
         request: Request,
 ) -> IngestionStatusResponse:
-    pass
+    authorizer_context = request.state.authorizer
+    role = authorizer_context["role"]
+    user_id = authorizer_context["userId"]
+
+    # Reuses the same cascading access model as every other course-scoped
+    # route: a student who can't see the course can't see its modules'
+    # ingestion status either.
+    _verify_course_access(role, user_id, course_id)
+
+    status = db.get_module_ingestion_status(course_id, module_id)
+    if status is None:
+        raise HTTPException(
+            status_code=404,
+            detail={"code": "MODULE_NOT_FOUND", "message": f"Module {module_id} not found"}
+        )
+
+    return IngestionStatusResponse(**status)
 
 
 # Content Upload
@@ -781,26 +797,4 @@ async def save_text_content(
     )
 
 
-@router.get("/{course_id}/modules/{module_id}/ingestion-status", response_model=IngestionStatusResponse)
-async def get_bedrock_kb_ingestion_status_for_module(
-        course_id: str,
-        module_id: str,
-        request: Request,
-) -> IngestionStatusResponse:
-    authorizer_context = request.state.authorizer
-    role = authorizer_context["role"]
-    user_id = authorizer_context["userId"]
 
-    # Reuses the same cascading access model as every other course-scoped
-    # route: a student who can't see the course can't see its modules'
-    # ingestion status either.
-    _verify_course_access(role, user_id, course_id)
-
-    status = db.get_module_ingestion_status(course_id, module_id)
-    if status is None:
-        raise HTTPException(
-            status_code=404,
-            detail={"code": "MODULE_NOT_FOUND", "message": f"Module {module_id} not found"}
-        )
-
-    return IngestionStatusResponse(**status)
