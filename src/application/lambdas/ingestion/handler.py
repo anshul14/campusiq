@@ -43,6 +43,7 @@ rest of the course's sync.
 from __future__ import annotations
 
 import os
+from datetime import datetime, timezone
 
 from aws_lambda_powertools import Logger
 
@@ -51,7 +52,6 @@ from application.plugins.content_plugin_interface.s3.s3_plugin import S3Plugin
 from application.services import dynamodb as db
 
 logger = Logger(service="ingestion-lambda")
-
 
 # Plugin registry: cms_source (stored on every COURSE# record) -> plugin
 # class. Only "s3" is implemented; google_classroom/strapi are
@@ -93,15 +93,53 @@ def _get_plugin_for_course(course_id: str) -> ContentPlugin:
     return plugin_factory()
 
 
+def _record_ingestion_failure(course_id: str, module_id: str, error_message: str) -> None:
+    """
+    Best-effort write of the failure back to the MODULE# record. Wrapped in
+    its own try/except deliberately -- a failure in this bookkeeping write
+    must never mask the original ingestion error that's about to propagate
+    (or already been logged) for EventBridge's retry/DLQ behaviour to act
+    on. Logging here is enough if the write itself fails; re-raising would
+    just replace one real error with a different, less useful one.
+    """
+    try:
+        db.mark_module_ingestion_failed(
+            course_id=course_id,
+            module_id=module_id,
+            error_message=error_message,
+            now=datetime.now(timezone.utc).isoformat(),
+        )
+    except Exception as e:
+        logger.error("Failed to record ingestion failure on MODULE# record", extra={
+            "course_id": course_id, "module_id": module_id, "write_error": str(e),
+        })
+
+
 def _ingest_one_module(course_id: str, module_id: str) -> None:
-    plugin = _get_plugin_for_course(course_id)
-    result = plugin.ingest_content(course_id, module_id)
+    try:
+        plugin = _get_plugin_for_course(course_id)
+        result = plugin.ingest_content(course_id, module_id)
+    except (ValueError, UnknownCMSSourceError) as e:
+        # Course-level setup failure (missing COURSE#, unknown cms_source)
+        # -- the MODULE# record already exists at this point (publish_module()
+        # ran synchronously before this event fired), so the caller checking
+        # this specific module's status deserves to know it failed, not just
+        # see it stuck at "pending" forever.
+        logger.error("Module ingestion failed (setup error)", extra={
+            "course_id": course_id, "module_id": module_id, "error_message": str(e),
+        })
+        _record_ingestion_failure(course_id, module_id, str(e))
+        raise
+
     if result.ingestion_status == IngestionStatus.FAILED:
         logger.error("Module ingestion failed", extra={
             "course_id": course_id,
             "module_id": module_id,
             "error_message": result.error_message,
         })
+        _record_ingestion_failure(
+            course_id, module_id, result.error_message or "Ingestion failed with no error detail"
+        )
     else:
         logger.info("Module ingested", extra={
             "course_id": course_id,
@@ -125,6 +163,9 @@ def _sync_course(course_id: str) -> None:
                 logger.error("Module ingestion failed during course sync", extra={
                     "course_id": course_id, "module_id": module_id, "error_message": result.error_message,
                 })
+                _record_ingestion_failure(
+                    course_id, module_id, result.error_message or "Ingestion failed with no error detail"
+                )
         except Exception as e:
             # A single module's unexpected failure must not abort the
             # rest of the course's sync — log and continue.
@@ -132,7 +173,7 @@ def _sync_course(course_id: str) -> None:
             logger.error("Unexpected error ingesting module during course sync", extra={
                 "course_id": course_id, "module_id": module_id, "error": str(e),
             })
-
+            _record_ingestion_failure(course_id, module_id, str(e))
     logger.info("Course sync complete", extra={
         "course_id": course_id, "module_count": len(modules), "failures": failures,
     })

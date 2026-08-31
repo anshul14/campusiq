@@ -25,9 +25,8 @@ from fastapi import APIRouter, Request, HTTPException
 from application.schemas import CourseResponse, CourseListResponse, UpdateCourseResponse, \
     CreateCourseResponse, CreateCourseRequest, UpdateCourseRequest, ModuleListResponse, ModuleResponse, \
     CreateModuleRequest, CreateModuleResponse, UpdateModuleRequest, UpdateModuleResponse, CourseStudentListResponse, \
-    EnrolStudentsRequest, EnrolStudentsResponse, CourseProgressResponse, QuizDefinitionResponse, GenerateQuizResponse, \
-    GenerateQuizRequest, SaveQuizResponse, SaveQuizRequest, QuizAttemptResponse, SubmitQuizResponse, SubmitQuizRequest, \
-    CourseQuizResultsResponse, CourseGapsResponse, DashboardResponse, AtRiskResponse, IngestionStatusResponse, \
+    EnrolStudentsRequest, EnrolStudentsResponse, CourseProgressResponse, CourseGapsResponse, DashboardResponse, \
+    AtRiskResponse, IngestionStatusResponse, \
     ContentPresignResponse, ContentPresignRequest, ContentCompleteResponse, ContentCompleteRequest, \
     SaveTextContentResponse, SaveTextContentRequest, CourseStatusEnum, ModuleStatusEnum, ModuleSummary
 from application.schemas import CourseSummary
@@ -520,8 +519,8 @@ async def enrol_students(
         )
 
     return EnrolStudentsResponse(
-        enrolled=student_ids,   # list of successfully enrolled student IDs
-        failed=[] # empty for now - Phase 2 add per-item error handling
+        enrolled=student_ids,  # list of successfully enrolled student IDs
+        failed=[]  # empty for now - Phase 2 add per-item error handling
     )
 
 
@@ -567,9 +566,6 @@ async def get_bedrock_kb_ingestion_status_for_module(
         request: Request,
 ) -> IngestionStatusResponse:
     pass
-
-
-
 
 
 # Content Upload
@@ -783,3 +779,28 @@ async def save_text_content(
         saved_at=now,
         ingestion_status="pending",
     )
+
+
+@router.get("/{course_id}/modules/{module_id}/ingestion-status", response_model=IngestionStatusResponse)
+async def get_bedrock_kb_ingestion_status_for_module(
+        course_id: str,
+        module_id: str,
+        request: Request,
+) -> IngestionStatusResponse:
+    authorizer_context = request.state.authorizer
+    role = authorizer_context["role"]
+    user_id = authorizer_context["userId"]
+
+    # Reuses the same cascading access model as every other course-scoped
+    # route: a student who can't see the course can't see its modules'
+    # ingestion status either.
+    _verify_course_access(role, user_id, course_id)
+
+    status = db.get_module_ingestion_status(course_id, module_id)
+    if status is None:
+        raise HTTPException(
+            status_code=404,
+            detail={"code": "MODULE_NOT_FOUND", "message": f"Module {module_id} not found"}
+        )
+
+    return IngestionStatusResponse(**status)

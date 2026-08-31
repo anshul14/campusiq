@@ -1196,6 +1196,92 @@ def upsert_module_from_ingestion(
         })
         raise e
 
+
+def mark_module_ingestion_failed(
+        course_id: str,
+        module_id: str,
+        error_message: str,
+        now: str,
+) -> None:
+    """
+    Record an ingestion failure on a MODULE# record.
+
+    Key:
+        PK = COURSE#{course_id}
+        SK = MODULE#{module_id}
+
+    Companion to upsert_module_from_ingestion() for the failure path — the
+    ingestion Lambda previously only logged failures to CloudWatch and left
+    ingestion_status stuck at "pending" forever, with no way for a caller
+    of get_bedrock_kb_ingestion_status_for_module() to tell "still
+    processing" apart from "failed silently" without going to CloudWatch
+    directly, which a route caller can't do.
+
+    ConditionExpression=attribute_exists(PK): a failure on a module that
+    doesn't have a MODULE# record at all (e.g. CMSCourseSyncRequested
+    discovering a module whose upsert never got far enough to create the
+    record) should surface as a ConditionalCheckFailedException the caller
+    can distinguish from a normal failure, not silently no-op.
+
+    Every attribute name aliased via ExpressionAttributeNames, following
+    the same blanket principle as upsert_module_from_ingestion() -- not
+    just the fields known to collide with DynamoDB's reserved-word list
+    today.
+    """
+    try:
+        table.update_item(
+            Key={"PK": f"COURSE#{course_id}", "SK": f"MODULE#{module_id}"},
+            UpdateExpression=(
+                "SET #ing = :failed, #err = :err, #u = :now"
+            ),
+            ExpressionAttributeNames={
+                "#ing": "ingestion_status",
+                "#err": "error_message",
+                "#u": "updated_at",
+            },
+            ExpressionAttributeValues={
+                ":failed": "failed",
+                ":err": error_message,
+                ":now": now,
+            },
+            ConditionExpression="attribute_exists(PK)",
+        )
+    except ClientError as e:
+        error_code = e.response["Error"]["Code"]
+        logger.error("DynamoDB mark_module_ingestion_failed failed", extra={
+            "error_code": error_code,
+            "course_id": course_id,
+            "module_id": module_id,
+        })
+        raise e
+
+
+def get_module_ingestion_status(course_id: str, module_id: str) -> dict | None:
+    """
+    Raw ingestion-status fields for a MODULE# record -- dedicated read,
+    not routed through _map_to_module_response(), which drops
+    kb_document_id/ingested_at/error_message entirely since it's shaped
+    for the general module view, not ingestion status specifically.
+
+    Returns None if the module doesn't exist (caller maps to 404).
+    ingestion_status defaults to "pending" for a module that exists but
+    was created before ingestion_status was a tracked field at all.
+    """
+    response = table.get_item(
+        Key={"PK": f"COURSE#{course_id}", "SK": f"MODULE#{module_id}"}
+    )
+    item = response.get("Item")
+    if item is None:
+        return None
+    return {
+        "module_id": module_id,
+        "ingestion_status": item.get("ingestion_status", "pending"),
+        "kb_document_id": item.get("kb_document_id"),
+        "ingested_at": item.get("ingested_at"),
+        "error_message": item.get("error_message"),
+    }
+
+
 # publish_module() is the synchronous half of the module Publish action,
 # paired with events.emit_module_published() for the async half.
 
@@ -1230,6 +1316,7 @@ def publish_module(course_id: str, module_id: str, now: str) -> None:
             "error_code": error_code, "course_id": course_id, "module_id": module_id,
         })
         raise e
+
 
 # update_module_content() records that content now exists for a module,
 # separate from publish_module(): authoring content and publishing it
