@@ -475,6 +475,8 @@ def enrol_students(
                     "student_id": student_id,
                     "enrolled_at": now,
                     "status": "active",
+                    "GSI1_PK": f"COURSE#{course_id}",
+                    "GSI1_SK": f"STUDENT#{student_id}",
                 }
             }
         })
@@ -613,6 +615,8 @@ def upsert_module_progress(
             "SET progress_pct = :pct, "
             "#s = :s, "
             "updated_at = :u, "
+            "GSI1_PK = :g1pk",
+            "GSI1_SK = :g1sk",
             "created_at = if_not_exists(created_at, :u), "
             "entity_type = if_not_exists(entity_type, :et)"
         ),
@@ -625,6 +629,8 @@ def upsert_module_progress(
             ":s": status,
             ":u": now,
             ":et": "PROGRESS",
+            ":g1pk": f"COURSE#{course_id}",
+            ":g1sk": f"PROGRESS#{module_id}#{user_id}",
         },
         ReturnValues="ALL_NEW",
     )
