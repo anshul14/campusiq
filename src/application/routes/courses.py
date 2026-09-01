@@ -28,6 +28,7 @@ from application.schemas import CourseResponse, CourseListResponse, UpdateCourse
     CreateModuleRequest, CreateModuleResponse, UpdateModuleRequest, UpdateModuleResponse, CourseStudentListResponse, \
     EnrolStudentsRequest, EnrolStudentsResponse, CourseProgressResponse, CourseGapsResponse, DashboardResponse, \
     AtRiskResponse, IngestionStatusResponse, ConceptGapDetail, AtRiskStudent, CourseStudentSummary, \
+    ModuleProgressSummary, StudentProgressInCourse, \
     ContentPresignResponse, ContentPresignRequest, ContentCompleteResponse, ContentCompleteRequest, \
     SaveTextContentResponse, SaveTextContentRequest, CourseStatusEnum, ModuleStatusEnum, ModuleSummary
 from application.schemas import CourseSummary
@@ -572,7 +573,57 @@ async def get_course_progress(
         module_id: str = None,
 
 ) -> CourseProgressResponse:
-    pass
+    authorizer_context = request.state.authorizer
+    role = authorizer_context["role"]
+    user_id = authorizer_context["userId"]
+
+    if role not in ("TEACHER", "ADMIN"):
+        raise HTTPException(status_code=403, detail={
+            "code": "FORBIDDEN", "message": "Only teachers and admins can view course-wide progress"
+        })
+
+    _verify_course_access(role=role, user_id=user_id, course_id=course_id)
+
+    progress_records = db.list_course_progress(course_id=course_id, module_id=module_id)
+
+    # Module titles aren't on the PROGRESS# record itself — join against
+    # MODULE#, cached per request since a course has a small, bounded
+    # module set (unlike the at-risk name join, which is per-student).
+    module_title_cache: dict[str, str] = {}
+    by_student: dict[str, list[ModuleProgressSummary]] = {}
+    for record in progress_records:
+        student_id = record["PK"].replace("STUDENT#", "")
+        record_module_id = record["SK"].split("#")[-1]  # PROGRESS#{course_id}#{module_id}
+
+        if record_module_id not in module_title_cache:
+            module = db.get_module_by_id(course_id=course_id, module_id=record_module_id)
+            module_title_cache[record_module_id] = module["title"] if module else record_module_id
+
+        status = record["status"]
+        by_student.setdefault(student_id, []).append(ModuleProgressSummary(
+            module_id=record_module_id,
+            title=module_title_cache[record_module_id],
+            status=status,
+            completion_pct=int(record["progress_pct"]),
+            started_at=record.get("created_at"),
+            # completed_at isn't tracked as its own field on the record —
+            # upsert_module_progress() always overwrites updated_at on
+            # every write, completed or not. Best available signal:
+            # updated_at is meaningful as "completed at" only once status
+            # has actually reached completed.
+            completed_at=record.get("updated_at") if status == "completed" else None,
+        ))
+
+    students = [
+        StudentProgressInCourse(
+            student_id=student_id,
+            name=(db.get_student_profile(student_id) or {}).get("name", "Unknown"),
+            modules=modules,
+        )
+        for student_id, modules in by_student.items()
+    ]
+
+    return CourseProgressResponse(students=students)
 
 
 # Gaps

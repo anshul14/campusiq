@@ -1029,6 +1029,40 @@ def list_course_students(
     }
 
 
+def list_course_progress(course_id: str, module_id: str = None) -> list[dict]:
+    """
+    All PROGRESS# records for a course via CourseIndex (GSI1), optionally
+    scoped to a single module.
+
+    GSI1_SK on a PROGRESS# record is PROGRESS#{module_id}#{user_id} (set
+    by upsert_module_progress()), so filtering to one module is a clean
+    begins_with prefix match — no need to fetch every module's records
+    and filter in memory.
+
+    Paginated internally for the same reason as list_course_gap_records —
+    feeds a per-student aggregation in the route layer that needs the
+    complete dataset, not one page of it. Not paginated to the caller;
+    same MVP scope call as list_course_gap_records, revisit if a course
+    grows to a size where this becomes a real cost.
+
+    Returns: raw Items list. progress_pct comes back as Decimal.
+    """
+    sk_prefix = f"PROGRESS#{module_id}#" if module_id else "PROGRESS#"
+    items = []
+    kwargs = {
+        "IndexName": "CourseIndex",
+        "KeyConditionExpression": Key("GSI1_PK").eq(f"COURSE#{course_id}")
+                                  & Key("GSI1_SK").begins_with(sk_prefix),
+    }
+    while True:
+        response = table.query(**kwargs)
+        items.extend(response.get("Items", []))
+        if "LastEvaluatedKey" not in response:
+            break
+        kwargs["ExclusiveStartKey"] = response["LastEvaluatedKey"]
+    return items
+
+
 def list_course_gap_records(course_id: str) -> list[dict]:
     """
     Every GAP# record for a course via AtRiskIndex (GSI3) — no severity
