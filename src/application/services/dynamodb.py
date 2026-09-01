@@ -998,6 +998,37 @@ def count_active_enrollments(course_id: str) -> int:
     return count
 
 
+def list_course_students(
+        course_id: str,
+        cursor: str = None,
+        page_size: int = 50,
+) -> dict:
+    """
+    Paginated course roster via CourseIndex (GSI1) — same
+    GSI1_PK=COURSE#{courseId} & GSI1_SK begins_with STUDENT# pattern as
+    count_active_enrollments(), but returning items instead of a count.
+
+    Returns raw ENROL# items (course_id, student_id, enrolled_at,
+    status) — the route layer joins each one against the student's own
+    PROFILE record for name/email, since those live on a separate item
+    (STUDENT#{sub}/PROFILE), not on the enrolment record itself.
+    """
+    kwargs = {
+        "IndexName": "CourseIndex",
+        "KeyConditionExpression": Key("GSI1_PK").eq(f"COURSE#{course_id}")
+                                  & Key("GSI1_SK").begins_with("STUDENT#"),
+        "Limit": page_size,
+    }
+    if cursor:
+        kwargs["ExclusiveStartKey"] = decode_cursor(cursor)
+
+    response = table.query(**kwargs)
+    return {
+        "items": response["Items"],
+        "next_cursor": encode_cursor(response["LastEvaluatedKey"]) if "LastEvaluatedKey" in response else None,
+    }
+
+
 def list_course_gap_records(course_id: str) -> list[dict]:
     """
     Every GAP# record for a course via AtRiskIndex (GSI3) — no severity

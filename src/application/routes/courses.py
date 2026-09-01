@@ -16,6 +16,7 @@ These routes handle CRUD course operations.
 import logging
 import os
 from datetime import datetime, timezone
+from decimal import Decimal
 from uuid import uuid4
 
 import boto3
@@ -26,7 +27,7 @@ from application.schemas import CourseResponse, CourseListResponse, UpdateCourse
     CreateCourseResponse, CreateCourseRequest, UpdateCourseRequest, ModuleListResponse, ModuleResponse, \
     CreateModuleRequest, CreateModuleResponse, UpdateModuleRequest, UpdateModuleResponse, CourseStudentListResponse, \
     EnrolStudentsRequest, EnrolStudentsResponse, CourseProgressResponse, CourseGapsResponse, DashboardResponse, \
-    AtRiskResponse, IngestionStatusResponse, \
+    AtRiskResponse, IngestionStatusResponse, ConceptGapDetail, AtRiskStudent, CourseStudentSummary, \
     ContentPresignResponse, ContentPresignRequest, ContentCompleteResponse, ContentCompleteRequest, \
     SaveTextContentResponse, SaveTextContentRequest, CourseStatusEnum, ModuleStatusEnum, ModuleSummary
 from application.schemas import CourseSummary
@@ -38,6 +39,11 @@ logger = logging.getLogger(__name__)
 # Module-level client, ADR-012 pattern — created once on cold start.
 s3_client = boto3.client("s3")
 CONTENT_BUCKET = os.environ["CONTENT_BUCKET_NAME"]
+
+# Same threshold the Gap Detection Lambda uses to gate the GapDetected
+# EventBridge event — kept as Decimal since gap_severity comes back from
+# DynamoDB as Decimal and comparing float to Decimal raises TypeError.
+AT_RISK_THRESHOLD = Decimal("0.700")
 
 router = APIRouter(
     prefix="/courses",
@@ -454,7 +460,42 @@ async def list_course_students(
         cursor: str = None,
         page_size: int = 50,
 ) -> CourseStudentListResponse:
-    pass
+    authorizer_context = request.state.authorizer
+    role = authorizer_context["role"]
+    user_id = authorizer_context["userId"]
+
+    # Roster includes email addresses — same PII posture as at-risk,
+    # students shouldn't see classmates' contact info.
+    if role not in ("TEACHER", "ADMIN"):
+        raise HTTPException(status_code=403, detail={
+            "code": "FORBIDDEN", "message": "Only teachers and admins can view the course roster"
+        })
+
+    _verify_course_access(role=role, user_id=user_id, course_id=course_id)
+
+    result = db.list_course_students(course_id=course_id, cursor=cursor, page_size=page_size)
+
+    # ENROL# records carry student_id/enrolled_at/status but not
+    # name/email — those live on the separate PROFILE record, joined
+    # here per page (bounded by page_size, unlike the at-risk N+1 which
+    # spans the whole course).
+    students = []
+    for item in result["items"]:
+        student_id = item["student_id"]
+        profile = db.get_student_profile(student_id)
+        students.append(CourseStudentSummary(
+            cognito_sub=student_id,
+            student_id=student_id,
+            name=profile["name"] if profile else "Unknown",
+            email=profile["email"] if profile else "",
+            enrolled_at=item["enrolled_at"],
+            status=item["status"],
+        ))
+
+    return CourseStudentListResponse(
+        students=students,
+        next_cursor=result["next_cursor"],
+    )
 
 
 @router.post("/{course_id}/enrolments", response_model=EnrolStudentsResponse, status_code=201)
@@ -540,7 +581,55 @@ async def get_gaps(
         course_id: str,
         request: Request,
 ) -> CourseGapsResponse:
-    pass
+    authorizer_context = request.state.authorizer
+    role = authorizer_context["role"]
+    user_id = authorizer_context["userId"]
+
+    # Aggregate-only (no student names) but still a teacher-facing
+    # heatmap per the schema docstring — same guard as at-risk below,
+    # for consistency rather than because this specific payload leaks PII.
+    if role not in ("TEACHER", "ADMIN"):
+        raise HTTPException(status_code=403, detail={
+            "code": "FORBIDDEN", "message": "Only teachers and admins can view the gap heatmap"
+        })
+
+    _verify_course_access(role=role, user_id=user_id, course_id=course_id)
+
+    gap_records = db.list_course_gap_records(course_id=course_id)
+
+    # Per-concept aggregation across every gap record regardless of
+    # severity (list_course_gap_records() is unfiltered by design — see
+    # its docstring) so avg_severity reflects "how bad when it happens,"
+    # not diluted by students who haven't triggered a gap on this concept.
+    by_concept: dict[str, dict] = {}
+    for record in gap_records:
+        concept_id = record["concept_id"]
+        severity = record["gap_severity"]  # Decimal
+
+        bucket = by_concept.setdefault(concept_id, {
+            "concept_name": record.get("concept_name", concept_id),
+            "severities": [],
+            "at_risk_count": 0,
+        })
+        bucket["severities"].append(severity)
+        if severity >= AT_RISK_THRESHOLD:
+            bucket["at_risk_count"] += 1
+
+    concepts = [
+        ConceptGapDetail(
+            concept_id=concept_id,
+            concept_name=data["concept_name"],
+            avg_severity=float(sum(data["severities"]) / len(data["severities"])),
+            at_risk_count=data["at_risk_count"],
+        )
+        for concept_id, data in by_concept.items()
+    ]
+
+    # Widest class-wide problem first — at_risk_count is the undiluted
+    # "how many students" signal, avg_severity breaks ties.
+    concepts.sort(key=lambda c: (c.at_risk_count, c.avg_severity), reverse=True)
+
+    return CourseGapsResponse(concepts=concepts)
 
 
 @router.get("/{course_id}/dashboard", response_model=DashboardResponse)
@@ -556,7 +645,59 @@ async def get_at_risk_students(
         course_id: str,
         request: Request,
 ) -> AtRiskResponse:
-    pass
+    authorizer_context = request.state.authorizer
+    role = authorizer_context["role"]
+    user_id = authorizer_context["userId"]
+
+    # Returns real student names tied to their weakest concepts — must
+    # never be reachable by a student in the course, not just an admin/
+    # teacher of it. _verify_course_access() alone would let an enrolled
+    # student in (it grants access to STUDENT role), so this explicit
+    # gate has to come first.
+    if role not in ("TEACHER", "ADMIN"):
+        raise HTTPException(status_code=403, detail={
+            "code": "FORBIDDEN", "message": "Only teachers and admins can view at-risk students"
+        })
+
+    _verify_course_access(role=role, user_id=user_id, course_id=course_id)
+
+    gap_records = db.list_course_gap_records(course_id=course_id)
+
+    # Group by student, keeping only gaps at or above the at-risk
+    # threshold — list_course_gap_records() is unfiltered, so the
+    # filtering happens here same as the GSI3 query pattern in the docs
+    # (KeyConditionExpression Key('GSI3_SK').gte('0.700')), just applied
+    # in-memory since we already fetched the full course dataset for
+    # get_gaps' sibling aggregation.
+    by_student: dict[str, list[dict]] = {}
+    for record in gap_records:
+        severity = record["gap_severity"]  # Decimal
+        if severity < AT_RISK_THRESHOLD:
+            continue
+        student_id = record["PK"].replace("STUDENT#", "")
+        by_student.setdefault(student_id, []).append({
+            "concept_id": record["concept_id"],
+            "concept_name": record.get("concept_name", record["concept_id"]),
+            "gap_severity": float(severity),
+        })
+
+    at_risk_students = []
+    for student_id, gaps in by_student.items():
+        profile = db.get_student_profile(student_id)
+        at_risk_students.append(AtRiskStudent(
+            student_id=student_id,
+            name=profile["name"] if profile else "Unknown",
+            gaps=gaps,
+        ))
+
+    # Most-affected students first — by number of at-risk concepts, then
+    # by their single worst severity as a tiebreaker.
+    at_risk_students.sort(
+        key=lambda s: (len(s.gaps), max(g["gap_severity"] for g in s.gaps)),
+        reverse=True,
+    )
+
+    return AtRiskResponse(at_risk_students=at_risk_students)
 
 
 @router.get("/{course_id}/modules/{module_id}/ingestion-status", response_model=IngestionStatusResponse)
@@ -795,6 +936,3 @@ async def save_text_content(
         saved_at=now,
         ingestion_status="pending",
     )
-
-
-
