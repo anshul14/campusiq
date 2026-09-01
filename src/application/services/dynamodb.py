@@ -615,8 +615,8 @@ def upsert_module_progress(
             "SET progress_pct = :pct, "
             "#s = :s, "
             "updated_at = :u, "
-            "GSI1_PK = :g1pk",
-            "GSI1_SK = :g1sk",
+            "GSI1_PK = :g1pk, "
+            "GSI1_SK = :g1sk, "
             "created_at = if_not_exists(created_at, :u), "
             "entity_type = if_not_exists(entity_type, :et)"
         ),
