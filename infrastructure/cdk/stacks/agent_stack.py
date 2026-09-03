@@ -91,6 +91,19 @@ class AgentStack(Stack):
             data_type="float32",
             dimension=EMBEDDING_DIMENSION,
             distance_metric="cosine",
+            # S3 Vectors treats every metadata key as filterable by
+            # default, capped at 2KB total. Bedrock KB automatically
+            # attaches the chunk's own text as AMAZON_BEDROCK_TEXT and
+            # document metadata as AMAZON_BEDROCK_METADATA — any chunk
+            # of real content exceeds 2KB on the text field alone, so
+            # both must be declared non-filterable (40KB cap instead) or
+            # ingestion fails on nearly every document.
+            metadata_configuration=s3vectors.CfnIndex.MetadataConfigurationProperty(
+                non_filterable_metadata_keys=[
+                    "AMAZON_BEDROCK_TEXT",
+                    "AMAZON_BEDROCK_METADATA",
+                ],
+            ),
         )
 
         # ------------------------------------------------------------------
