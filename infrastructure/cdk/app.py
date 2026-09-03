@@ -7,6 +7,7 @@ import aws_cdk as cdk
 from stacks.database_stack import DatabaseStack
 from stacks.auth_stack import AuthStack
 from stacks.storage_stack import StorageStack
+from stacks.agent_stack import AgentStack
 from stacks.compute_stack import ComputeStack
 
 config_path = os.path.join(
@@ -58,7 +59,18 @@ storage_stack = StorageStack(
     description=f"CampusIQ {institution} {environment} — S3 content bucket and CloudFront",
 )
 
-# Stack 4 — Compute (depends on all three above)
+# Stack 4 — Agent (depends on Storage for the content bucket export)
+agent_stack = AgentStack(
+    app,
+    f"{stack_prefix}-Agent",
+    deployment_name=f"{institution}-{environment}",
+    config=config,
+    env=env,
+    description=f"CampusIQ {institution} {environment} — Bedrock Knowledge Base (S3 Vectors)",
+)
+agent_stack.add_dependency(storage_stack)
+
+# Stack 5 — Compute (depends on all three foundational stacks)
 compute_stack = ComputeStack(
     app,
     f"{stack_prefix}-Compute",
